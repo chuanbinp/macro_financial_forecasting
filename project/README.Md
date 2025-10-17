@@ -1,5 +1,4 @@
-# Project Title
-Financial forecasting using Macroeconomic News
+# Financial forecasting using Macroeconomic New
 
 ## Description
 
