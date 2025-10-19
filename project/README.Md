@@ -7,5 +7,5 @@ Using Agentics Framework, Fine-tuned LLMs and Deep-learning to forecast Macroeco
 https://colab.research.google.com/drive/1CjWA8IUu1-vRBEfxYV5VuHVx21cTaqZU?usp=sharing
 
 ## Contributors
-Chuan Bin Phoe
+Chuan Bin Phoe   
 Neaton Ang
