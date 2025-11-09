@@ -2,7 +2,7 @@ from config import Config
 from train_data_loader import TrainDataLoader
 
 config = Config("../config.env")
-train_data_loader = TrainDataLoader(config.dataset_name, config.split_name)
+train_data_loader = TrainDataLoader(config)
 
 def main():
     print("Starting processing pipeline ...")

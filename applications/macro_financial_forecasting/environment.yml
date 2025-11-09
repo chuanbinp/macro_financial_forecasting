@@ -8,3 +8,6 @@ dependencies:
   - hnswlib
   - pip:
       - agentics-py
+      - datasets
+      - pydantic
+      - hf_xet
