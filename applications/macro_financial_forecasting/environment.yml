@@ -1,0 +1,10 @@
+name: macro-fincast
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - hnswlib
+  - pip:
+      - agentics-py
