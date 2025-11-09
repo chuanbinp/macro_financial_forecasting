@@ -1,22 +1,24 @@
 from datasets import load_dataset, DatasetDict, Value
-
+from config import Config
+import os
 
 class TrainDataLoader:
-    def __init__(self, dataset_name: str, split_name: str):
-        self.dataset_name = dataset_name
-        self.split_name = split_name
+    def __init__(self, config: Config) -> None:
+        self.dataset_name = config.dataset_name
+        self.split_name = "train"
         self.dataset = None
+        # Create data folder path and dataset cache path
+        self.data_dir = config.dataset_dir
+        os.makedirs(self.data_dir, exist_ok=True)
+        safe_dataset_name = self.dataset_name.replace("/", "_")
+        self.cache_path = os.path.join(self.data_dir, f"{safe_dataset_name}_{self.split_name}")
 
     def _download_dataset(self) -> DatasetDict:
+        print(f"Downloading dataset '{self.dataset_name}' with split '{self.split_name}' from the Hugging Face Hub...")
         try:
-            dataset = load_dataset(self.dataset_name, split=self.split_name)
+            self.dataset = load_dataset(self.dataset_name, split=self.split_name, download_mode="force_redownload")
             print("\n--- Download Successful! ---")
-            print(f"Loaded dataset type: {type(dataset)}")
-            print(f"\nTotal number of rows in the '{self.split_name}' split: {len(dataset)}")
-            print("\nFeatures (columns) in the dataset:")
-            print(dataset.column_names)
-            self.dataset = dataset
-            return dataset
+            return self.dataset
         except FileNotFoundError:
             print(f"Error: Dataset or split '{self.dataset_name}/{self.split_name}' not found on the Hub.")
             print("Please check the dataset name and split name for typos.")
@@ -34,7 +36,19 @@ class TrainDataLoader:
         )
 
     def load(self) -> DatasetDict:
-        self._download_dataset()
+        # Try loading from saved local dataset first
+        if os.path.exists(self.cache_path):
+            print(f"Loading dataset from local cache at '{self.cache_path}'...")
+            self.dataset = load_dataset(self.cache_path, split=self.split_name)
+        else:
+            self._download_dataset()
+            print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
+            self.dataset.save_to_disk(self.cache_path)
+        
+        print(f"Loaded dataset type: {type(self.dataset)}")
+        print(f"\nTotal number of rows in the '{self.split_name}' split: {len(self.dataset)}")
+        print("\nFeatures (columns) in the dataset:")
+        print(self.dataset.column_names)
         self._convert_datetime_to_date_str()
         print("Training dataset loaded and processed.")
         return self.dataset

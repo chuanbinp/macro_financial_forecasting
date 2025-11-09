@@ -17,7 +17,7 @@ class Config:
 
         # Training Dataset
         self.dataset_name: str = os.getenv("DATASET_NAME", "danidanou/BloombergFinancialNews")
-        self.split_name: str = os.getenv("SPLIT_NAME", "train")
+        self.dataset_dir: str = os.getenv("DATASET_DIR", "../data")
 
         # RSS Feeds - split by comma
         feeds_str = os.getenv("RSS_FEEDS", "")
