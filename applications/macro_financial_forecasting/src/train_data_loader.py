@@ -1,6 +1,8 @@
 from datasets import load_dataset, DatasetDict, Value
 from config import Config
 import os
+from data_model.bloomberg_news_entry import BloombergNewsEntry
+from typing import List, Dict, Any
 
 class TrainDataLoader:
     def __init__(self, config: Config) -> None:
@@ -34,6 +36,12 @@ class TrainDataLoader:
             lambda x: {"Date": x["Date"].strftime("%Y-%m-%d")},
             features=new_features,
         )
+    
+    def _validate_dataset_entries(self) -> None:
+        print(f"\n--- Starting validation of {len(self.dataset)} entries ---")
+        validated_ds = [BloombergNewsEntry.model_validate(record) for record in self.dataset]
+        print("--- Validation Complete! ---")
+        self.dataset = validated_ds
 
     def load(self) -> DatasetDict:
         # Try loading from saved local dataset first
@@ -44,11 +52,15 @@ class TrainDataLoader:
             self._download_dataset()
             print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
             self.dataset.save_to_disk(self.cache_path)
-        
+
+        print()
         print(f"Loaded dataset type: {type(self.dataset)}")
-        print(f"\nTotal number of rows in the '{self.split_name}' split: {len(self.dataset)}")
-        print("\nFeatures (columns) in the dataset:")
-        print(self.dataset.column_names)
+        print(f"Total number of rows in the '{self.split_name}' split: {len(self.dataset)}")
+        print(f"Features (columns) in the dataset:{self.dataset.column_names}")
+        print()
+
         self._convert_datetime_to_date_str()
-        print("Training dataset loaded and processed.")
+        print("Training dataset processed.")
+        self._validate_dataset_entries()
+        print("Training dataset validated.")
         return self.dataset
