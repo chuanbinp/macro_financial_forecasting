@@ -41,5 +41,3 @@ Guidelines:
 2. Then, summarize the **5 most important points** of the article as "KeyPoints",
 each starting with a bullet ("-").
 '''
-
-config = Config("../config.env")

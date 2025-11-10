@@ -1,8 +1,9 @@
-from config import config
+from config import Config
 from train_data_loader import TrainDataLoader
 from agentics_transducer import AgenticTransducer
 from data_model.bloomberg_news_entry import BloombergNewsEntry
 
+config = Config("../config.env")
 train_data_loader = TrainDataLoader(config)
 agentic_transducer = AgenticTransducer(config)  # Initialize later when needed
 
