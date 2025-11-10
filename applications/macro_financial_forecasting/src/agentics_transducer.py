@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from crewai import LLM  # example LLM wrapper
 from config import Config
 import asyncio
+from pathlib import Path
 
 
 class AgenticTransducer:
@@ -12,6 +13,7 @@ class AgenticTransducer:
     def __init__(self, config: Config, verbose: bool = False):
         self.llm = LLM(model=config.llm_model)
         self.verbose = verbose
+        self.data_dir = Path(config.dataset_dir)
 
     def create_AG(self, pydantic_class: BaseModel, data: List[BaseModel]) -> AG:
         return AG(atype=pydantic_class, states=data, llm=self.llm, verbose=self.verbose)
@@ -21,7 +23,7 @@ class AgenticTransducer:
         await ag_obj.self_transduction(
             source_fields=source_fields,
             target_fields=target_fields,
-            instructions= instructions
+            instructions=instructions
         )
         return ag_obj
     
@@ -38,12 +40,18 @@ class AgenticTransducer:
         successful_results = [res for res in results if not isinstance(res, Exception)]
         return successful_results
     
-    async def batch_process_with_chunks(self, ag_obj: AG, instructions: str, chunk_size: int = 500) -> List[AG]:
+    async def batch_process_with_chunks(self, pydantic_class: BaseModel, instructions: str, chunk_size: int = 200) -> List[AG]:
         results = []
         for i in range(0, len(self.states), chunk_size):
             batch = self.states[i:i+chunk_size]
-            ag_list = [self.create_AG(ag_obj, [entry]) for entry in batch]
+            ag_list = [self.create_AG(pydantic_class, [entry]) for entry in batch]
             batch_results = await self.batch_self_transduce(ag_list, instructions)
             results.extend(batch_results)
             # Optionally save intermediate results to disk/db here to free memory
         return results
+    
+    def save_AG(self, ag_obj: AG, filename: str) -> None:
+        ag_obj.to_csv(self.data_dir / filename)
+
+    def load_AG(self, filename: str) -> AG:
+        return AG.from_csv(self.data_dir / filename)
