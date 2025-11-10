@@ -27,27 +27,31 @@ class AgenticTransducer:
         )
         return ag_obj
     
-    async def batch_self_transduce(self, ag_objs: List[AG], instructions: str) -> List[AG]:
+    async def batch_self_transduce(self, ag_objs: List[AG], instructions: str, source_fields: List[str], target_fields: List[str]) -> List[AG]:
         # async def transduce_single(ag: AG):
         #     ag.instructions = instructions
         #     await ag.self_transduction()
         #     return ag
 
         results = await asyncio.gather(
-            *(self.self_transduce(ag, instructions) for ag in ag_objs),
+            *(self.self_transduce(ag, instructions, source_fields, target_fields) for ag in ag_objs),
             return_exceptions=True
         )
         successful_results = [res for res in results if not isinstance(res, Exception)]
         return successful_results
     
-    async def batch_process_with_chunks(self, pydantic_class: BaseModel, instructions: str, chunk_size: int = 200) -> List[AG]:
+    async def batch_process_with_chunks(self, pydantic_class: BaseModel, instructions: str, source_fields: List[str], target_fields: List[str], chunk_size: int = 2000) -> List[AG]:
         results = []
         for i in range(0, len(self.states), chunk_size):
             batch = self.states[i:i+chunk_size]
             ag_list = [self.create_AG(pydantic_class, [entry]) for entry in batch]
-            batch_results = await self.batch_self_transduce(ag_list, instructions)
+            batch_results = await self.batch_self_transduce(ag_list, instructions, source_fields, target_fields)
             results.extend(batch_results)
             # Optionally save intermediate results to disk/db here to free memory
+            self.save_AG(
+                self.create_AG(pydantic_class, batch_results),
+                f"transduction_results_{i}.csv"
+            )
         return results
     
     def save_AG(self, ag_obj: AG, filename: str) -> None:
