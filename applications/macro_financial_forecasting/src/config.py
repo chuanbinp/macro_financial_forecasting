@@ -24,20 +24,22 @@ class Config:
         self.rss_feeds: List[str] = [f.strip() for f in feeds_str.split(",") if f.strip()]
 
         # Prompt Instructions
-        self.prompt_instructions: str = (
-        "You are a financial news analyst.\n"
-        "1. Read the article carefully and classify its **primary industry sector** as \"Industry\".\n\n"
-        "Industries must be one of:\n"
-        f"{self.industries}\n\n"
-        "Guidelines:\n"
-        "- Choose **\"General Market\"** if the article covers overall economic conditions,\n"
-        "  government or central bank policies, currency movements, inflation, GDP,\n"
-        "  interest rates, IMF or World Bank decisions, or broad market sentiment that\n"
-        "  affects multiple sectors rather than one specific industry.\n"
-        "- Choose **\"None\"** if the have no financial effects to any sector or general market.\n"
-        "- If the article focuses on one company, classify it based on that company’s core sector.\n\n"
-        "2. Then, summarize the **5 most important points** of the article as \"KeyPoints\",\n"
-        "each starting with a bullet (\"-\")."
-    )
+        self.prompt_instructions: str = f'''You are a financial news analyst.
+1. Read the article carefully and classify its **primary industry sector** as "Industry".
+
+Industries must be one of:
+{self.industries}
+
+Guidelines:
+- Choose **"General Market"** if the article covers overall economic conditions,
+  government or central bank policies, currency movements, inflation, GDP,
+  interest rates, IMF or World Bank decisions, or broad market sentiment that
+  affects multiple sectors rather than one specific industry.
+- Choose **"None"** if the have no financial effects to any sector or general market.
+- If the article focuses on one company, classify it based on that company’s core sector.
+
+2. Then, summarize the **5 most important points** of the article as "KeyPoints",
+each starting with a bullet ("-").
+'''
 
 config = Config("../config.env")

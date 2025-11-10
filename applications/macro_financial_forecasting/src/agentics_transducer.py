@@ -15,14 +15,8 @@ class AgenticTransducer:
     def create_AG(self, pydantic_class: BaseModel, data: List[BaseModel]) -> AG:
         return AG(atype=pydantic_class, states=data, llm=self.llm, verbose=self.verbose)
 
-    async def self_transduce(self, ag_obj: AG, prompt: str) -> AG:
+    async def self_transduce(self, ag_obj: AG, instructions: str) -> AG:
         """Run transduction on a single agentic object."""
         ag_obj.instructions = self.instructions
         await ag_obj.self_transduction()
         return ag_obj
-
-    # async def self_transduce_batch(self, ag_objects: List[AG]) -> List[AG]:
-    #     """Run transduction asynchronously on a batch of agentic objects."""
-    #     tasks = [self.transduce(ag) for ag in ag_objects]
-    #     results = await asyncio.gather(*tasks)
-    #     return results

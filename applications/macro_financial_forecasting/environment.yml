@@ -10,3 +10,4 @@ dependencies:
       - agentics-py
       - datasets
       - pydantic
+      - crewai
