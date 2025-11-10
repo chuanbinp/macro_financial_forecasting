@@ -1,8 +1,6 @@
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field, HttpUrl
-from config import Config
-
-config = Config("../config.env")
+from config import config
 
 class BloombergNewsEntry(BaseModel):
     Headline: str = Field(description="Title or headline of the news article.")
