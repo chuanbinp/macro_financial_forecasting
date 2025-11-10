@@ -41,3 +41,16 @@ Guidelines:
 2. Then, summarize the **5 most important points** of the article as "KeyPoints",
 each starting with a bullet ("-").
 '''
+    def __str__(self):
+        return (
+            f"Config(\n"
+            f"  gemini_api_key: !secret!\n"
+            f"  openai_api_key: !secret!\n"
+            f"  llm_model: {self.llm_model}\n"
+            f"  industries: {self.industries}\n"
+            f"  dataset_name: {self.dataset_name}\n"
+            f"  dataset_dir: {self.dataset_dir}\n"
+            f"  rss_feeds: {self.rss_feeds}\n"
+            f"  prompt_instructions: {self.prompt_instructions[:100]}... (truncated)\n"
+            f")"
+        )
