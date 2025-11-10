@@ -17,6 +17,6 @@ class AgenticTransducer:
 
     async def self_transduce(self, ag_obj: AG, instructions: str) -> AG:
         """Run transduction on a single agentic object."""
-        ag_obj.instructions = self.instructions
+        ag_obj.instructions = instructions
         await ag_obj.self_transduction()
         return ag_obj
