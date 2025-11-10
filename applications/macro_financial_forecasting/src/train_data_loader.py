@@ -1,4 +1,4 @@
-from datasets import load_dataset, DatasetDict, Value
+from datasets import load_dataset, load_from_disk, DatasetDict, Value
 from config import Config
 import os
 from data_model.bloomberg_news_entry import BloombergNewsEntry
@@ -47,7 +47,7 @@ class TrainDataLoader:
         # Try loading from saved local dataset first
         if os.path.exists(self.cache_path):
             print(f"Loading dataset from local cache at '{self.cache_path}'...")
-            self.dataset = load_dataset(self.cache_path, split=self.split_name)
+            self.dataset = load_from_disk(self.cache_path)
         else:
             self._download_dataset()
             print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
