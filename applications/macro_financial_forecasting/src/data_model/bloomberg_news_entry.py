@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, HttpUrl
 from config import Config
 
 config = Config("../config.env")
+IndustryType = Literal[tuple(config.industries)]
 
 class BloombergNewsEntry(BaseModel):
     Headline: str = Field(description="Title or headline of the news article.")
@@ -11,7 +12,7 @@ class BloombergNewsEntry(BaseModel):
     Link: str = Field(description="URL link to the full article.")
     Article: str = Field( description="Full article text content.")
     # New additions
-    Industry: Optional[str] = Field(None, description=f"The primary industry sector this news is relevant to. Must be one of: {config.industries}.")
+    Industry: Optional[IndustryType] = Field(None, description=f"The primary industry sector this news is relevant to. Must be one of: {config.industries}.")
     KeyPoints: Optional[str] = Field(None, description="A bullet list summarizing the 5 most important points of the news article.")
 
     class Config:
