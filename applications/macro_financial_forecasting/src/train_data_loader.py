@@ -3,8 +3,7 @@ from config import Config
 import os
 from data_model.bloomberg_news_entry import BloombergNewsEntry
 from utils.pydantic_parquet_util import PydanticParquetUtil
-from typing import List, Dict, Any
-import tqdm
+from tqdm import tqdm
 
 class TrainDataLoader:
     def __init__(self, config: Config) -> None:
