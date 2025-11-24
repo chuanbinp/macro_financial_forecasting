@@ -9,7 +9,7 @@ class Config:
         # LLM
         self.gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
         self.openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
-        self.llm_model: str = os.getenv("LLM_MODEL", "gpt-5-nano-2025-08-07")
+        self.llm_model: str = os.getenv("LLM_MODEL", "openai/gpt-5-nano-2025-08-07")
 
         # Industry List
         industries_str = os.getenv("INDUSTRIES", "")

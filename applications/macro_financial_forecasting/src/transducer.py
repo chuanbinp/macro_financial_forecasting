@@ -1,6 +1,20 @@
-class NewsProcessor:
-    def __init__(self, client, concurrency_limit=32, batch_size=10_000):
-        self.client = client
+import asyncio
+from typing import List
+from tqdm.asyncio import tqdm_asyncio
+import instructor
+
+from config import Config
+from data_model.bloomberg_news_entry import BloombergNewsEntry
+from data_model.bloomberg_news_industry_and_keypoints import IndustryAndKeyPoints
+from utils.pydantic_parquet_util import PydanticParquetUtil
+
+class NewsTransducer:
+    def __init__(self, config: Config, concurrency_limit=32, batch_size=10_000):
+        self.client = instructor.from_provider(
+            config.llm_model,
+            api_key=config.openai_api_key,
+            async_client=True
+        )
         self.semaphore = asyncio.Semaphore(concurrency_limit)
         self.batch_size = batch_size
 
@@ -14,7 +28,7 @@ class NewsProcessor:
         )
         async with self.semaphore:
             extracted = await self.client.chat.completions.create(
-                response_model=IndustryAndKeyPointsExtraction,
+                response_model=IndustryAndKeyPoints,
                 messages=[{"role": "user", "content": message_content}],
                 max_retries=3
             )
@@ -22,7 +36,7 @@ class NewsProcessor:
         entry.KeyPoints = extracted.KeyPoints
         return entry
 
-    async def process_news_entries_async(self, entries, prompt):
+    async def process_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str):
         tasks = [self.extract_entry(entry, prompt) for entry in entries]
         results = []
         for coro in tqdm_asyncio(asyncio.as_completed(tasks), total=len(tasks), desc="Processing news", unit="entry"):
@@ -30,7 +44,7 @@ class NewsProcessor:
             results.append(result)
         return results
 
-    async def process_news_entries_async(self, entries, prompt, save_path_prefix: str = None):
+    async def process_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str, save_path_prefix: str = None):
         tasks = [self.extract_entry(entry, prompt) for entry in entries]
         results = []
         batch_number = 1
