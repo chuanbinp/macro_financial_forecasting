@@ -49,7 +49,7 @@ class TrainDataLoader:
         if os.path.exists(self.cache_path):
             print(f"Loading dataset from local cache at '{self.cache_path}'...")
             # self.dataset = load_from_disk(self.cache_path)
-            PydanticParquetUtil.load_from_parquet(self.cache_path, BloombergNewsEntry)
+            self.dataset = PydanticParquetUtil.load_from_parquet(self.cache_path, BloombergNewsEntry)
         else:
             self._download_dataset()
             self._convert_datetime_to_date_str()
