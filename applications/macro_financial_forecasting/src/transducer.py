@@ -2,7 +2,7 @@ import asyncio
 from typing import List
 from tqdm.asyncio import tqdm_asyncio
 import instructor
-from pandas import pd
+import pandas as pd
 
 from config import Config
 from data_model.bloomberg_news_entry import BloombergNewsEntry

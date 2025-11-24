@@ -4,6 +4,7 @@ import os
 from data_model.bloomberg_news_entry import BloombergNewsEntry
 from utils.pydantic_parquet_util import PydanticParquetUtil
 from typing import List, Dict, Any
+import tqdm
 
 class TrainDataLoader:
     def __init__(self, config: Config) -> None:
@@ -37,10 +38,10 @@ class TrainDataLoader:
             lambda x: {"Date": x["Date"].strftime("%Y-%m-%d")},
             features=new_features,
         )
-    
+
     def _validate_dataset_entries(self) -> None:
         print(f"\n--- Starting validation of {len(self.dataset)} entries ---")
-        validated_ds = [BloombergNewsEntry.model_validate(record) for record in self.dataset]
+        validated_ds = [BloombergNewsEntry.model_validate(record) for record in tqdm(self.dataset, desc="Validating entries")]
         print("--- Validation Complete! ---")
         self.dataset = validated_ds
 
