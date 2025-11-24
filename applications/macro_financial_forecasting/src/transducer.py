@@ -2,6 +2,7 @@ import asyncio
 from typing import List
 from tqdm.asyncio import tqdm_asyncio
 import instructor
+from pandas import pd
 
 from config import Config
 from data_model.bloomberg_news_entry import BloombergNewsEntry
@@ -36,15 +37,7 @@ class NewsTransducer:
         entry.KeyPoints = extracted.KeyPoints
         return entry
 
-    async def process_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str):
-        tasks = [self.extract_entry(entry, prompt) for entry in entries]
-        results = []
-        for coro in tqdm_asyncio(asyncio.as_completed(tasks), total=len(tasks), desc="Processing news", unit="entry"):
-            result = await coro
-            results.append(result)
-        return results
-
-    async def process_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str, save_path_prefix: str = None):
+    async def transduce_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str, save_path_prefix: str = None):
         tasks = [self.extract_entry(entry, prompt) for entry in entries]
         results = []
         batch_number = 1
@@ -66,3 +59,14 @@ class NewsTransducer:
             PydanticParquetUtil.save_to_parquet(results, batch_filename)
 
         return results
+    
+    def group_by_date_and_industry(self, entries: List[BloombergNewsEntry], save_path: str = None):
+        df = pd.DataFrame([entry.dict() for entry in entries])
+        df = (
+            df.groupby(['Industry', 'Date'])
+            .apply(lambda x: x.to_dict(orient='records'))
+            .reset_index()
+        )
+        if save_path and df is not None:
+            PydanticParquetUtil.save_to_parquet(df, save_path)
+        return df
