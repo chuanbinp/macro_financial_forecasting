@@ -2,6 +2,7 @@ from datasets import load_dataset, load_from_disk, DatasetDict, Value
 from config import Config
 import os
 from data_model.bloomberg_news_entry import BloombergNewsEntry
+from utils.pydantic_parquet_util import PydanticParquetUtil
 from typing import List, Dict, Any
 
 class TrainDataLoader:
@@ -13,7 +14,7 @@ class TrainDataLoader:
         self.data_dir = config.dataset_dir
         os.makedirs(self.data_dir, exist_ok=True)
         safe_dataset_name = self.dataset_name.replace("/", "_")
-        self.cache_path = os.path.join(self.data_dir, f"{safe_dataset_name}_{self.split_name}")
+        self.cache_path = os.path.join(self.data_dir, f"{safe_dataset_name}_{self.split_name}.parquet")
 
     def _download_dataset(self) -> DatasetDict:
         print(f"Downloading dataset '{self.dataset_name}' with split '{self.split_name}' from the Hugging Face Hub...")
@@ -47,11 +48,17 @@ class TrainDataLoader:
         # Try loading from saved local dataset first
         if os.path.exists(self.cache_path):
             print(f"Loading dataset from local cache at '{self.cache_path}'...")
-            self.dataset = load_from_disk(self.cache_path)
+            # self.dataset = load_from_disk(self.cache_path)
+            PydanticParquetUtil.load_from_parquet(self.cache_path, BloombergNewsEntry)
         else:
             self._download_dataset()
+            self._convert_datetime_to_date_str()
             print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
-            self.dataset.save_to_disk(self.cache_path)
+            self._convert_datetime_to_date_str()
+            print("Training dataset processed.")
+            self._validate_dataset_entries()
+            print("Training dataset validated.")
+            PydanticParquetUtil.save_to_parquet(self.dataset, self.cache_path)
 
         print()
         print(f"Loaded dataset type: {type(self.dataset)}")
@@ -59,8 +66,8 @@ class TrainDataLoader:
         print(f"Features (columns) in the dataset:{self.dataset.column_names}")
         print()
 
-        self._convert_datetime_to_date_str()
-        print("Training dataset processed.")
-        self._validate_dataset_entries()
-        print("Training dataset validated.")
+        # self._convert_datetime_to_date_str()
+        # print("Training dataset processed.")
+        # self._validate_dataset_entries()
+        # print("Training dataset validated.")
         return self.dataset

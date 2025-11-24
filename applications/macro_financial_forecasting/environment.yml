@@ -7,7 +7,7 @@ dependencies:
   - pip
   - hnswlib
   - pip:
-      - agentics-py
+      - instructor
       - datasets
       - pydantic
-      - crewai
+      - pandas
