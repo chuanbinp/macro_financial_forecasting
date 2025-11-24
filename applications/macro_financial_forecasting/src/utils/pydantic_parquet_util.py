@@ -2,7 +2,7 @@ import pandas as pd
 from typing import Type
 from data_model.bloomberg_news_entry import BloombergNewsEntry
 
-class PydanticParquetUtil:
+class ParquetUtil:
     @staticmethod
     def save_to_parquet(objects: list[BloombergNewsEntry], filename: str):
         # Convert list of Pydantic objects to DataFrame by dict conversion

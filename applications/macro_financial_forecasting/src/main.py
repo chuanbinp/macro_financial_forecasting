@@ -1,4 +1,4 @@
-from transducer import NewsTransducer
+from transducer import NewsProcessor
 from config import Config
 from train_data_loader import TrainDataLoader
 # from agentics_transducer import AgenticTransducer
@@ -8,7 +8,7 @@ import asyncio
 config = Config("../config.env")
 
 train_data_loader = TrainDataLoader(config)
-transducer = NewsTransducer(config)
+transducer = NewsProcessor(config)
 
 async def main():
   print("Starting processing pipeline ...")

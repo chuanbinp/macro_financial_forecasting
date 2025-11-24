@@ -2,7 +2,7 @@ from datasets import load_dataset, load_from_disk, DatasetDict, Value
 from config import Config
 import os
 from data_model.bloomberg_news_entry import BloombergNewsEntry
-from utils.pydantic_parquet_util import PydanticParquetUtil
+from utils.pydantic_parquet_util import ParquetUtil
 from tqdm import tqdm
 
 class TrainDataLoader:
@@ -49,14 +49,14 @@ class TrainDataLoader:
         if os.path.exists(self.cache_path):
             print(f"Loading dataset from local cache at '{self.cache_path}'...")
             # self.dataset = load_from_disk(self.cache_path)
-            self.dataset = PydanticParquetUtil.load_from_parquet(self.cache_path, BloombergNewsEntry)
+            self.dataset = ParquetUtil.load_from_parquet(self.cache_path, BloombergNewsEntry)
         else:
             self._download_dataset()
             self._convert_datetime_to_date_str()
             print("Training dataset processed.")
             self._validate_dataset_entries()
             print("Training dataset validated.")
-            PydanticParquetUtil.save_to_parquet(self.dataset, self.cache_path)
+            ParquetUtil.save_to_parquet(self.dataset, self.cache_path)
             print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
 
         print(f"Total number of rows: {len(self.dataset)}")

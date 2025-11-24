@@ -7,9 +7,9 @@ import pandas as pd
 from config import Config
 from data_model.bloomberg_news_entry import BloombergNewsEntry
 from data_model.bloomberg_news_industry_and_keypoints import IndustryAndKeyPoints
-from utils.pydantic_parquet_util import PydanticParquetUtil
+from utils.pydantic_parquet_util import ParquetUtil
 
-class NewsTransducer:
+class NewsProcessor:
     def __init__(self, config: Config, concurrency_limit=32, batch_size=10_000):
         self.client = instructor.from_provider(
             config.llm_model,
@@ -49,14 +49,14 @@ class NewsTransducer:
             # Save in batches
             if save_path_prefix and len(results) % self.batch_size == 0:
                 batch_filename = f"{save_path_prefix}_batch_{batch_number}.parquet"
-                PydanticParquetUtil.save_to_parquet(results, batch_filename)
+                ParquetUtil.save_to_parquet(results, batch_filename)
                 results = []
                 batch_number += 1
 
         # Save any remaining entries after loop
         if save_path_prefix and results:
             batch_filename = f"{save_path_prefix}_batch_{batch_number}.parquet"
-            PydanticParquetUtil.save_to_parquet(results, batch_filename)
+            ParquetUtil.save_to_parquet(results, batch_filename)
 
         return results
     
@@ -68,5 +68,5 @@ class NewsTransducer:
             .reset_index()
         )
         if save_path and df is not None:
-            PydanticParquetUtil.save_to_parquet(df, save_path)
+            ParquetUtil.save_to_parquet(df, save_path)
         return df
