@@ -53,12 +53,11 @@ class TrainDataLoader:
         else:
             self._download_dataset()
             self._convert_datetime_to_date_str()
-            print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
-            self._convert_datetime_to_date_str()
             print("Training dataset processed.")
             self._validate_dataset_entries()
             print("Training dataset validated.")
             PydanticParquetUtil.save_to_parquet(self.dataset, self.cache_path)
+            print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
 
         print()
         print(f"Loaded dataset type: {type(self.dataset)}")
