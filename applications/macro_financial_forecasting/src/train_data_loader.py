@@ -59,14 +59,5 @@ class TrainDataLoader:
             PydanticParquetUtil.save_to_parquet(self.dataset, self.cache_path)
             print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
 
-        print()
-        print(f"Loaded dataset type: {type(self.dataset)}")
-        print(f"Total number of rows in the '{self.split_name}' split: {len(self.dataset)}")
-        print(f"Features (columns) in the dataset:{self.dataset.column_names}")
-        print()
-
-        # self._convert_datetime_to_date_str()
-        # print("Training dataset processed.")
-        # self._validate_dataset_entries()
-        # print("Training dataset validated.")
+        print(f"Total number of rows: {len(self.dataset)}")
         return self.dataset

@@ -3,6 +3,8 @@ from train_data_loader import TrainDataLoader
 # from agentics_transducer import AgenticTransducer
 # from data_model.bloomberg_news_entry import BloombergNewsEntry
 # import asyncio
+from utils.pydantic_parquet_util import PydanticParquetUtil
+from data_model.bloomberg_news_entry import BloombergNewsEntry
 
 config = Config("../config.env")
 
