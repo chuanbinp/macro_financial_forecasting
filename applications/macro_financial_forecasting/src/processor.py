@@ -43,7 +43,7 @@ class NewsProcessor:
         entry.KeyPoints = extracted.KeyPoints
         return entry
 
-    async def transduce_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str, save_path_prefix: str = None):
+    async def transduce_news_entries_async(self, entries: List[BloombergNewsEntry], prompt: str = None, save_path_prefix: str = None):
         if prompt is None:
             prompt = self.prompt_instructions["classify_and_keypoints"]
         tasks = [self.extract_entry(entry, prompt) for entry in entries]
