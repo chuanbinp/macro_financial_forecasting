@@ -49,14 +49,14 @@ class TrainDataLoader:
         if os.path.exists(self.cache_path):
             print(f"Loading dataset from local cache at '{self.cache_path}'...")
             # self.dataset = load_from_disk(self.cache_path)
-            self.dataset = ParquetUtil.load_from_parquet(self.cache_path, BloombergNewsEntry)
+            self.dataset = ParquetUtil.load_pydantic_from_parquet(self.cache_path, BloombergNewsEntry)
         else:
             self._download_dataset()
             self._convert_datetime_to_date_str()
             print("Training dataset processed.")
             self._validate_dataset_entries()
             print("Training dataset validated.")
-            ParquetUtil.save_to_parquet(self.dataset, self.cache_path)
+            ParquetUtil.save_pydantic_to_parquet(self.dataset, self.cache_path)
             print(f"Saving processed dataset to local cache at '{self.cache_path}'...")
 
         print(f"Total number of rows: {len(self.dataset)}")

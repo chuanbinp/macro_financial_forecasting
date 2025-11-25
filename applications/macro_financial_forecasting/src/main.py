@@ -1,4 +1,4 @@
-from transducer import NewsProcessor
+from processor import NewsProcessor
 from config import Config
 from train_data_loader import TrainDataLoader
 # from agentics_transducer import AgenticTransducer

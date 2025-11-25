@@ -49,14 +49,14 @@ class NewsProcessor:
             # Save in batches
             if save_path_prefix and len(results) % self.batch_size == 0:
                 batch_filename = f"{save_path_prefix}_batch_{batch_number}.parquet"
-                ParquetUtil.save_to_parquet(results, batch_filename)
+                ParquetUtil.save_pydantic_to_parquet(results, batch_filename)
                 results = []
                 batch_number += 1
 
         # Save any remaining entries after loop
         if save_path_prefix and results:
             batch_filename = f"{save_path_prefix}_batch_{batch_number}.parquet"
-            ParquetUtil.save_to_parquet(results, batch_filename)
+            ParquetUtil.save_pydantic_to_parquet(results, batch_filename)
 
         return results
     
@@ -68,5 +68,5 @@ class NewsProcessor:
             .reset_index()
         )
         if save_path and df is not None:
-            ParquetUtil.save_to_parquet(df, save_path)
+            ParquetUtil.save_df_to_parquet(df, save_path)
         return df
