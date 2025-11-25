@@ -44,7 +44,6 @@ class FinBertSentiment:
         # process texts in batches
         for i in tqdm_asyncio(range(0, len(texts), batch_size), desc="FinBERT Sentiment"):
             batch_texts = texts[i : i + batch_size]
-            print(batch_texts)
             scores = await asyncio.get_event_loop().run_in_executor(
                 self.executor, self.get_sentiment_scores_batch, batch_texts
             )

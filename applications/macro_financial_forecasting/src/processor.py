@@ -145,7 +145,7 @@ class NewsProcessor:
         df["Summary"] = summaries
 
         # 3. Batch FinBERT sentiment scoring
-        news_list = df["News"].tolist()
+        news_list = [str(text) for text in df["News"].tolist()]
         finbert_scores = await self.batch_finbert_sentiment_scores(news_list)
         df["SentimentScore"] = finbert_scores
 
