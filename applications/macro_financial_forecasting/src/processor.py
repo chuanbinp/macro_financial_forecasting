@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Tuple
+from typing import List
 from tqdm.asyncio import tqdm_asyncio
 import instructor
 import pandas as pd
@@ -94,21 +94,28 @@ class NewsProcessor:
             )
         return result.summary
     
-    async def sentiment_and_explanation(self, industry: str, news: str, gm_news: str = None, prompt: str = None) -> Tuple[float, str]:
-        # Get sentiment score using finbert
-        finbert_news = f"\nIndustry:\n{industry}"
-        finbert_news += f"\Industry News:\n{news}"
-        if gm_news:
-            finbert_news += f"\nGeneral Market News (same date):\n{gm_news}\n"
-        finbert_score = self.finbert.get_sentiment_score(finbert_news)
+    async def batch_finbert_sentiment_scores(self, news_texts: List[str]) -> List[float]:
+        # Calls FinBERT in batch (async)
+        scores = await self.finbert.async_get_sentiment_scores(news_texts)
+        return scores
 
-        # Compose prompt for explanation
+    async def sentiment_explanation(
+        self,
+        industry: str,
+        news: str,
+        finbert_score: float = None,
+        gm_news: str = None,
+        prompt: str = None
+    ) -> str:
+        # Compose prompt for explanation with precomputed finbert_score
         if prompt is None:
             prompt = self.prompt_instructions["sentiment_explanation"]
+
         prompt += "\n"
         prompt += f"\nIndustry News:\n{industry}"
         prompt += f"\nIndustry Articles:\n{news}"
-        prompt += f"\nFinBERT Score:\n{finbert_score}"
+        if finbert_score is not None:
+            prompt += f"\nFinBERT Score:\n{finbert_score:.3f}"
         if gm_news:
             prompt += "\n"
             prompt += f"\nTake into account the general market news for the same date to further inform your sentiment analysis.\n"
@@ -120,13 +127,14 @@ class NewsProcessor:
                 messages=[{"role": "user", "content": prompt}],
                 max_retries=3
             )
-        return finbert_score, result.explanation
+        return result.explanation
+
 
     async def process_dataframe(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
         # 1. Sort by date
         df = df.sort_values("Date").reset_index(drop=True)
 
-        # 2. Summarize
+        # 2. Summarize asynchronously
         summarize_tasks = [
             self.summarize_news(news_text)
             for news_text in df["News"]
@@ -136,21 +144,29 @@ class NewsProcessor:
             summaries.append(await coro)
         df["Summary"] = summaries
 
-        # 3. Sentiment and explanation
-        # Precompute General Market dict by date
+        # 3. Batch FinBERT sentiment scoring
+        news_list = df["News"].tolist()
+        finbert_scores = await self.batch_finbert_sentiment_scores(news_list)
+        df["SentimentScore"] = finbert_scores
+
+
+        # 4. Prepare general market news dict
         gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["News"].first().to_dict()
+
+        # 5. Generate sentiment explanations
         sentiment_tasks = []
         for _, row in df.iterrows():
             gm_news = gm_by_date.get(row["Date"])
-            sentiment_tasks.append(self.sentiment_and_explanation(row["Industry"], row["News"], gm_news))
-        
-        sentiments, explanations = [], []
+            sentiment_tasks.append(self.sentiment_explanation(
+                row["Industry"],
+                row["News"],
+                finbert_score=row["SentimentScore"],
+                gm_news=gm_news
+            ))
+        explanations = []
         for coro in tqdm_asyncio(asyncio.as_completed(sentiment_tasks), total=len(sentiment_tasks), desc="Sentiment & Explanation"):
-            score, explanation = await coro
-            sentiments.append(score)
+            explanation = await coro
             explanations.append(explanation)
-        
-        df["SentimentScore"] = sentiments
         df["SentimentExplanation"] = explanations
 
         if save_path and df is not None:
