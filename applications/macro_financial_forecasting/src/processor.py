@@ -12,14 +12,16 @@ from data_model.bloomberg_news_summary import NewsSummary
 from data_model.bloomberg_news_sentiment_explanation import SentimentResult
 from utils.pydantic_parquet_util import ParquetUtil
 from finbert import FinBertSentiment
+from hf_wrapper import HFInstructorClient
 
 class NewsProcessor:
     def __init__(self, config: Config, concurrency_limit=64, batch_size=10_000):
-        self.client = instructor.from_provider(
-            config.llm_model,
-            api_key=config.openai_api_key,
-            async_client=True
-        )
+        # self.client = instructor.from_provider(
+        #     config.llm_model,
+        #     api_key=config.openai_api_key,
+        #     async_client=True
+        # )
+        self.client = HFInstructorClient(model="meta-llama/Llama-3.1-8B-Instruct")
         self.semaphore = asyncio.Semaphore(concurrency_limit)
         self.batch_size = batch_size
         self.data_dir = config.dataset_dir
