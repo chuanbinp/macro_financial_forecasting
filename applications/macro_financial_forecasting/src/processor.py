@@ -145,7 +145,7 @@ class NewsProcessor:
         df["SentimentScore"] = finbert_scores
 
         # 4. Prepare general market news dict
-        gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["News"].first().to_dict()
+        gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["Summary"].first().to_dict()
 
         # 5. Generate sentiment explanations preserving order
         sentiment_tasks = []
@@ -153,12 +153,12 @@ class NewsProcessor:
             gm_news = gm_by_date.get(row["Date"])
             sentiment_tasks.append(self.sentiment_explanation(
                 row["Industry"],
-                row["News"],
+                row["Summary"],
                 finbert_score=row["SentimentScore"],
                 gm_news=gm_news
             ))
 
-        explanations = await tqdm_asyncio.gather(*sentiment_tasks, desc="Sentiment & Explanation")
+        explanations = await tqdm_asyncio.gather(*sentiment_tasks, desc="Explanation")
         df["SentimentExplanation"] = explanations
 
         if save_path and df is not None:

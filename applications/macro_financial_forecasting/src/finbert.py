@@ -33,11 +33,6 @@ class FinBertSentiment:
             score = probs_dict["positive"] - probs_dict["negative"]
             scores.append(score)
         return scores
-
-    # async def async_get_sentiment_scores(self, texts: List[str]) -> List[float]:
-    #     loop = asyncio.get_event_loop()
-    #     scores = await loop.run_in_executor(self.executor, self.get_sentiment_scores_batch, texts)
-    #     return scores
     
     async def async_get_sentiment_scores(self, texts: List[str], batch_size: int = 64) -> List[float]:
         all_scores = []
