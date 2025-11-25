@@ -11,6 +11,7 @@ from data_model.bloomberg_news_industry_and_keypoints import IndustryAndKeyPoint
 from data_model.bloomberg_news_summary import NewsSummary
 from data_model.bloomberg_news_sentiment_explanation import SentimentResult
 from utils.pydantic_parquet_util import ParquetUtil
+from finbert import FinBertSentiment
 
 class NewsProcessor:
     def __init__(self, config: Config, concurrency_limit=32, batch_size=10_000):
@@ -24,6 +25,7 @@ class NewsProcessor:
         self.data_dir = config.dataset_dir
         os.makedirs(self.data_dir, exist_ok=True)
         self.prompt_instructions = config.prompt_instructions
+        self.finbert = FinBertSentiment(config)
 
     async def extract_entry(self, entry: BloombergNewsEntry, prompt: str) -> BloombergNewsEntry:
         message_content = (
@@ -93,11 +95,20 @@ class NewsProcessor:
         return result.summary
     
     async def sentiment_and_explanation(self, industry: str, news: str, gm_news: str = None, prompt: str = None) -> Tuple[float, str]:
+        # Get sentiment score using finbert
+        finbert_news = f"\nIndustry:\n{industry}"
+        finbert_news += f"\Industry News:\n{news}"
+        if gm_news:
+            finbert_news += f"\nGeneral Market News (same date):\n{gm_news}\n"
+        finbert_score = self.finbert.get_sentiment_score(finbert_news)
+
+        # Compose prompt for explanation
         if prompt is None:
-            prompt = self.prompt_instructions["sentiment_and_explanation"]
+            prompt = self.prompt_instructions["sentiment_explanation"]
         prompt += "\n"
-        prompt += f"\nIndustry:\n{industry}"
-        prompt += f"\nArticle:\n{news}"
+        prompt += f"\nIndustry News:\n{industry}"
+        prompt += f"\nIndustry Articles:\n{news}"
+        prompt += f"\nFinBERT Score:\n{finbert_score}"
         if gm_news:
             prompt += "\n"
             prompt += f"\nTake into account the general market news for the same date to further inform your sentiment analysis.\n"
@@ -109,7 +120,7 @@ class NewsProcessor:
                 messages=[{"role": "user", "content": prompt}],
                 max_retries=3
             )
-        return result.score, result.explanation
+        return finbert_score, result.explanation
 
     async def process_dataframe(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
         # 1. Sort by date

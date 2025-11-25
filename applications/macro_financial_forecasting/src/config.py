@@ -23,6 +23,8 @@ class Config:
         feeds_str = os.getenv("RSS_FEEDS", "")
         self.rss_feeds: List[str] = [f.strip() for f in feeds_str.split(",") if f.strip()]
 
+        self.finbert_model: str = os.getenv("FINBERT_MODEL", "ProsusAI/finbert")
+
         # Prompt Instructions
         self.prompt_instructions: Dict[str] = {
 "classify_and_keypoints": f'''You are a financial news analyst.
@@ -46,13 +48,11 @@ each starting with a bullet ("-").
 Read the articles carefully and Summarize the **5 to 10 most important points** as "Summary",
 each starting with a bullet ("-").
 ''',
-"sentiment_and_explanation": f'''You are a financial news analyst.
+"sentiment_explanation": f'''You are a financial news analyst.
 Think about how the news article impacts financial markets, especially in the Industry specified.
 Use your knowledge of economics, market trends, and investor behavior.
 
-Given the following news article, produce:
-1. A sentiment score for the specified industry from -1 (very negative for financial markets) to +1 (very positive) as "Score"
-2. A brief explanation of your score as "Explanation"
+Given the following news article, produce a brief explanation of your score as "Explanation".
 ''',
         }
     def __str__(self):

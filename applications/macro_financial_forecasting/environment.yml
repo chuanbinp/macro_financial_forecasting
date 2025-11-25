@@ -2,12 +2,17 @@ name: macro-fincast
 channels:
   - defaults
   - conda-forge
+  - nvidia
 dependencies:
   - python=3.11
   - pip
   - tqdm
+  - pytorch
+  - torchvision
+  - torchaudio
   - pip:
       - instructor
       - datasets
       - pydantic
       - pandas
+      - transformers
