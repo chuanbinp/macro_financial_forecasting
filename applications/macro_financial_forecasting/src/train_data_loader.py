@@ -14,7 +14,7 @@ class TrainDataLoader:
         self.data_dir = config.dataset_dir
         os.makedirs(self.data_dir, exist_ok=True)
         safe_dataset_name = self.dataset_name.replace("/", "_")
-        self.cache_path = os.path.join(self.data_dir, f"{safe_dataset_name}_{self.split_name}.parquet")
+        self.cache_path = os.path.join(self.data_dir, f"{safe_dataset_name}_{self.split_name}")
 
     def _download_dataset(self) -> DatasetDict:
         print(f"Downloading dataset '{self.dataset_name}' with split '{self.split_name}' from the Hugging Face Hub...")

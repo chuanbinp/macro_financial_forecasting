@@ -56,14 +56,14 @@ class NewsProcessor:
 
             # Save in batches
             if save_path_prefix and len(results) % self.batch_size == 0:
-                batch_filename = os.path.join(self.data_dir, f"{save_path_prefix}_batch_{batch_number}.parquet")
+                batch_filename = os.path.join(self.data_dir, f"{save_path_prefix}_batch_{batch_number}")
                 ParquetUtil.save_pydantic_to_parquet(results, batch_filename)
                 results = []
                 batch_number += 1
 
         # Save any remaining entries after loop
         if save_path_prefix and results:
-            batch_filename = os.path.join(self.data_dir, f"{save_path_prefix}_batch_{batch_number}.parquet")
+            batch_filename = os.path.join(self.data_dir, f"{save_path_prefix}_batch_{batch_number}")
             ParquetUtil.save_pydantic_to_parquet(results, batch_filename)
 
         return results
@@ -77,7 +77,7 @@ class NewsProcessor:
             .rename(columns={0: 'News'})
         )
         if save_path and df is not None:
-            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}.parquet"))
+            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
         return df
     
     async def summarize_news(self, news_text: str, prompt: str = None) -> str:
@@ -143,6 +143,6 @@ class NewsProcessor:
         df["SentimentExplanation"] = explanations
 
         if save_path and df is not None:
-            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}.parquet"))
+            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
 
         return df
