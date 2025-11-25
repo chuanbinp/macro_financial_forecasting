@@ -12,7 +12,7 @@ class HuggingFaceChat:
 
         async def create(self, response_model: BaseModel, messages, max_retries=3):
             prompt = messages[0].get("content", "")
-            result = await self.parent.client.text_generation(prompt, model=self.parent.model)
+            result = await self.parent.client.conversational(prompt, model=self.parent.model)
             generated_text = result[0]["generated_text"]
 
             # Validate and parse using Pydantic response_model if provided
