@@ -92,11 +92,15 @@ class NewsProcessor:
             )
         return result.summary
     
-    async def sentiment_and_explanation(self, news: str, gm_news: str = None, prompt: str = None) -> Tuple[float, str]:
+    async def sentiment_and_explanation(self, industry: str, news: str, gm_news: str = None, prompt: str = None) -> Tuple[float, str]:
         if prompt is None:
             prompt = self.prompt_instructions["sentiment_and_explanation"]
+        prompt += "\n"
+        prompt += f"\nIndustry:\n{industry}"
         prompt += f"\nArticle:\n{news}"
         if gm_news:
+            prompt += "\n"
+            prompt += f"\nTake into account the general market news for the same date to further inform your sentiment analysis.\n"
             prompt += f"\nGeneral Market News (same date):\n{gm_news}\n"
 
         async with self.semaphore:
@@ -127,7 +131,7 @@ class NewsProcessor:
         sentiment_tasks = []
         for _, row in df.iterrows():
             gm_news = gm_by_date.get(row["Date"])
-            sentiment_tasks.append(self.sentiment_and_explanation(row["News"], gm_news))
+            sentiment_tasks.append(self.sentiment_and_explanation(row["Industry"], row["News"], gm_news))
         
         sentiments, explanations = [], []
         for coro in tqdm_asyncio(asyncio.as_completed(sentiment_tasks), total=len(sentiment_tasks), desc="Sentiment & Explanation"):
