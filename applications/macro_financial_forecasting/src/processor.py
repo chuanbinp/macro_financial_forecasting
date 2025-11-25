@@ -134,14 +134,9 @@ class NewsProcessor:
         # 1. Sort by date
         df = df.sort_values("Date").reset_index(drop=True)
 
-        # 2. Summarize asynchronously
-        summarize_tasks = [
-            self.summarize_news(news_text)
-            for news_text in df["News"]
-        ]
-        summaries = []
-        for coro in tqdm_asyncio(asyncio.as_completed(summarize_tasks), total=len(summarize_tasks), desc="Summarizing"):
-            summaries.append(await coro)
+        # 2. Summarize asynchronously with order preserved
+        summarize_tasks = [self.summarize_news(news_text) for news_text in df["News"]]
+        summaries = await tqdm_asyncio.gather(*summarize_tasks, desc="Summarizing")
         df["Summary"] = summaries
 
         # 3. Batch FinBERT sentiment scoring
@@ -149,11 +144,10 @@ class NewsProcessor:
         finbert_scores = await self.batch_finbert_sentiment_scores(news_list)
         df["SentimentScore"] = finbert_scores
 
-
         # 4. Prepare general market news dict
         gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["News"].first().to_dict()
 
-        # 5. Generate sentiment explanations
+        # 5. Generate sentiment explanations preserving order
         sentiment_tasks = []
         for _, row in df.iterrows():
             gm_news = gm_by_date.get(row["Date"])
@@ -163,10 +157,8 @@ class NewsProcessor:
                 finbert_score=row["SentimentScore"],
                 gm_news=gm_news
             ))
-        explanations = []
-        for coro in tqdm_asyncio(asyncio.as_completed(sentiment_tasks), total=len(sentiment_tasks), desc="Sentiment & Explanation"):
-            explanation = await coro
-            explanations.append(explanation)
+
+        explanations = await tqdm_asyncio.gather(*sentiment_tasks, desc="Sentiment & Explanation")
         df["SentimentExplanation"] = explanations
 
         if save_path and df is not None:
