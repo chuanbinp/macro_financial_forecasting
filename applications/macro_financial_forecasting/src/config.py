@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 class Config:
     def __init__(self, env_path: Optional[str] = ".env"):
@@ -24,7 +24,8 @@ class Config:
         self.rss_feeds: List[str] = [f.strip() for f in feeds_str.split(",") if f.strip()]
 
         # Prompt Instructions
-        self.prompt_instructions: str = f'''You are a financial news analyst.
+        self.prompt_instructions: Dict[str] = {
+"classify_and_keypoints": f'''You are a financial news analyst.
 1. Read the article carefully and classify its **primary industry sector** as "Industry".
 
 Industries must be one of:
@@ -40,7 +41,17 @@ Guidelines:
 
 2. Then, summarize the **5 most important points** of the article as "KeyPoints",
 each starting with a bullet ("-").
-'''
+''',
+"summarize_daily": f'''You are a financial news analyst.
+Read the articles carefully and Summarize the **5 to 10 most important points** as "Summary",
+each starting with a bullet ("-").
+''',
+"sentiment_and_explanation": f'''You are a financial news analyst. Think about how the news article impacts financial markets, use your knowledge of economics, market trends, and investor behavior.
+Given the following news article, produce:
+1. A sentiment score from -1 (very negative for financial markets) to +1 (very positive) as "Score"
+2. A brief explanation of your score as "Explanation"
+''',
+        }
     def __str__(self):
         return (
             f"Config(\n"
@@ -51,6 +62,6 @@ each starting with a bullet ("-").
             f"  dataset_name: {self.dataset_name}\n"
             f"  dataset_dir: {self.dataset_dir}\n"
             f"  rss_feeds: {self.rss_feeds}\n"
-            f"  prompt_instructions: {self.prompt_instructions[:100]}... (truncated)\n"
+            f"  prompt_instructions: {self.prompt_instructions["classify_and_keypoints"][:100]}... (truncated)\n"
             f")"
         )
