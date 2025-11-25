@@ -14,7 +14,7 @@ from utils.pydantic_parquet_util import ParquetUtil
 from finbert import FinBertSentiment
 
 class NewsProcessor:
-    def __init__(self, config: Config, concurrency_limit=32, batch_size=10_000):
+    def __init__(self, config: Config, concurrency_limit=64, batch_size=10_000):
         self.client = instructor.from_provider(
             config.llm_model,
             api_key=config.openai_api_key,

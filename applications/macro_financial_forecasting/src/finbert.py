@@ -34,7 +34,7 @@ class FinBertSentiment:
             scores.append(score)
         return scores
     
-    async def async_get_sentiment_scores(self, texts: List[str], batch_size: int = 64) -> List[float]:
+    async def async_get_sentiment_scores(self, texts: List[str], batch_size: int = 128) -> List[float]:
         all_scores = []
         # process texts in batches
         for i in tqdm_asyncio(range(0, len(texts), batch_size), desc="FinBERT Sentiment"):
