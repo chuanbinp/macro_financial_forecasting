@@ -102,7 +102,7 @@ class NewsProcessor:
     async def sentiment_explanation(
         self,
         industry: str,
-        news: str,
+        summary: str,
         finbert_score: float = None,
         gm_news: str = None,
         prompt: str = None
@@ -112,8 +112,8 @@ class NewsProcessor:
             prompt = self.prompt_instructions["sentiment_explanation"]
 
         prompt += "\n"
-        prompt += f"\nIndustry News:\n{industry}"
-        prompt += f"\nIndustry Articles:\n{news}"
+        prompt += f"\nIndustry:\n{industry}"
+        prompt += f"\nIndustry Summary:\n{summary}"
         if finbert_score is not None:
             prompt += f"\nFinBERT Score:\n{finbert_score:.3f}"
         if gm_news:
