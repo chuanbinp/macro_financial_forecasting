@@ -31,8 +31,7 @@ class NewsProcessor:
         self.finbert = FinBertSentiment(config)
         self.deberta = DebertaIndustryClassifier(config)
     
-    def group_by_date_and_industry(self, entries: List[BloombergNewsEntry], save_path: str = None):
-        df = pd.DataFrame([entry.dict() for entry in entries])
+    def group_by_date_and_industry(self, df: pd.DataFrame, save_path: str = None):
         df = (
             df.groupby(['Industry', 'Date'])
             .apply(lambda x: x.to_dict(orient='records'))
