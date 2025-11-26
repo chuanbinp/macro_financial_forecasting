@@ -56,8 +56,8 @@ class HFInstructorCompletions:
         """Low-level HF chat completion call."""
         prompt = "\n".join([msg["content"] for msg in messages])
         result = await self.parent.client.text_generation(
-            prompt,
-            model=self.parent.model,
+            inputs=prompt,
+            model=self.parent.model
         )
         return result.choices[0].message["content"]
 
