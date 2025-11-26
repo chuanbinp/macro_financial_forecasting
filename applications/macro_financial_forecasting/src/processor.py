@@ -1,5 +1,6 @@
 import asyncio
 from typing import List
+from tqdm import tqdm
 from tqdm.asyncio import tqdm_asyncio
 import instructor
 import pandas as pd
@@ -42,21 +43,20 @@ class NewsProcessor:
             ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
         return df
     
-    def prepare_impactful_news(
+    def filter_and_analyze_news(
         self, 
         df: pd.DataFrame,
         save_path: str = None
     ) -> pd.DataFrame:
         """
-        Process grouped news DataFrame to filter and identify impactful news.
-        Expects DataFrame from group_by_date_and_industry() with columns: Industry, Date, News
+        Filter out 'None' industries and display statistics about the grouped news data.
         
         Args:
-            df: Grouped DataFrame with 'News' column containing list of article dicts
-            save_path: Optional path to save the resulting DataFrame
+            df: Grouped DataFrame with columns: Industry, Date, News
+            save_path: Optional path to save the filtered DataFrame
             
         Returns:
-            DataFrame with ImpactfulNews column containing top 2 articles by sentiment
+            Filtered DataFrame with ArticleCount column added
         """
         # 1. Drop rows where Industry == "None" and show count
         none_count = (df['Industry'] == 'None').sum()
@@ -84,9 +84,37 @@ class NewsProcessor:
         print(f"Total articles: {df_filtered['ArticleCount'].sum()}")
         print(f"\n{'='*60}\n")
         
-        # 3. Create ImpactfulNews column with top 2 articles by absolute sentiment score
+        # Save if path provided
+        if save_path:
+            ParquetUtil.save_df_to_parquet(
+                df_filtered, 
+                os.path.join(self.data_dir, save_path)
+            )
+        
+        return df_filtered
+
+    def extract_impactful_news(
+        self,
+        df: pd.DataFrame,
+        top_n: int = 3,
+        save_path: str = None
+    ) -> pd.DataFrame:
+        """
+        Extract top N most impactful news articles for each (Industry, Date) pair.
+        Articles are ranked by absolute sentiment score.
+        
+        Args:
+            df: DataFrame with 'News' column containing list of article dicts
+            top_n: Number of top articles to extract (default: 3)
+            save_path: Optional path to save the resulting DataFrame
+            
+        Returns:
+            DataFrame with ImpactfulNews column containing top N articles
+        """
+        df_result = df.copy()
+        
         def get_top_impactful(news_list):
-            """Extract top 2 articles by absolute sentiment score from news list."""
+            """Extract top N articles by absolute sentiment score from news list."""
             if not news_list:
                 return []
             
@@ -97,43 +125,36 @@ class NewsProcessor:
                 reverse=True
             )
             
-            # Take top 2
-            top_2 = sorted_news[:2]
+            # Take top N
+            top_articles = sorted_news[:top_n]
             
             # Extract only needed fields
             impactful_news = [
                 {
                     'Headline': article['Headline'],
-                    # 'SentimentScore': article['SentimentScore'],
                     'Article': article['Article']
                 }
-                for article in top_2
+                for article in top_articles
             ]
             
             return impactful_news
         
-        # Apply to each row
-        df_filtered['ImpactfulNews'] = df_filtered['News'].apply(get_top_impactful)
-        
-        # Calculate average sentiment for each group
-        # df_filtered['AvgSentiment'] = df_filtered['News'].apply(
-        #     lambda news_list: sum(article.get('SentimentScore', 0) for article in news_list) / len(news_list) if news_list else 0
-        # )
+        # Apply to each row with progress bar
+        print(f"Extracting top {top_n} impactful news per (Industry, Date) pair...")
+        tqdm.pandas(desc="Processing groups")
+        df_result['ImpactfulNews'] = df_result['News'].progress_apply(get_top_impactful)
         
         # Sort by date and industry
-        result = df_filtered.sort_values(['Date', 'Industry']).reset_index(drop=True)
-        
-        # Keep only necessary columns for final output
-        # result = result[['Industry', 'Date', 'ArticleCount', 'AvgSentiment', 'ImpactfulNews']]
+        df_result = df_result.sort_values(['Date', 'Industry']).reset_index(drop=True)
         
         # Save if path provided
         if save_path:
             ParquetUtil.save_df_to_parquet(
-                result, 
+                df_result, 
                 os.path.join(self.data_dir, save_path)
             )
-
-        return result
+        
+        return df_result
     
     def enrich_news_entries_with_classifications(
         self, 
@@ -177,83 +198,6 @@ class NewsProcessor:
         print(f"Completed processing {len(df)} entries")
 
         return df
-    
-    def prepare_impactful_news(
-        self, 
-        df: pd.DataFrame,
-        save_path: str = None
-        ) -> pd.DataFrame:
-        """
-        Process news DataFrame to filter, analyze, and identify impactful news.
-
-        Args:
-            df: DataFrame with columns: Industry, Date, SentimentScore, and news fields
-            save_path: Optional path to save the resulting DataFrame
-            
-        Returns:
-            DataFrame grouped by (Industry, Date) with ImpactfulNews column
-        """
-        # 1. Drop rows where Industry == "None" and show count
-        none_count = (df['Industry'] == 'None').sum()
-        df_filtered = df[df['Industry'] != 'None'].copy()
-
-        print(f"\n{'='*60}")
-        print(f"Dropped {none_count} articles with Industry='None'")
-        print(f"Remaining articles: {len(df_filtered)}")
-        print(f"{'='*60}\n")
-
-        # 2. Get frequency count for each (Industry, Date) pair
-        frequency = df_filtered.groupby(['Industry', 'Date']).size().reset_index(name='ArticleCount')
-
-        print("Frequency Count by (Industry, Date):")
-        print(frequency.to_string(index=False))
-        print(f"\n{'='*60}\n")
-
-        # Display summary statistics
-        print("Summary Statistics:")
-        print(f"Total unique (Industry, Date) pairs: {len(frequency)}")
-        print(f"Average articles per pair: {frequency['ArticleCount'].mean():.2f}")
-        print(f"Max articles in a pair: {frequency['ArticleCount'].max()}")
-        print(f"Min articles in a pair: {frequency['ArticleCount'].min()}")
-        print(f"\n{'='*60}\n")
-
-        # 3. Create ImpactfulNews column with top 2 articles by absolute sentiment score
-        def get_top_impactful(group):
-            # Sort by absolute sentiment score (most extreme sentiment = most impactful)
-            group_sorted = group.sort_values(
-                by='SentimentScore', 
-                key=lambda x: abs(x),  # Sort by absolute value
-                ascending=False
-            )
-            
-            # Take top 2
-            top_2 = group_sorted.head(2)
-            
-            # Create list of impactful news with key fields
-            impactful_news = top_2[[
-                'Headline', 
-                'Article'
-            ]].to_dict('records')
-            
-            return pd.Series({
-                'ImpactfulNews': impactful_news,
-            })
-
-        # Group and create final DataFrame
-        result = df_filtered.groupby(['Industry', 'Date']).apply(get_top_impactful).reset_index()
-
-        # Sort by date and industry
-        result = result.sort_values(['Date', 'Industry']).reset_index(drop=True)
-
-        # Save if path provided
-        if save_path:
-            ParquetUtil.save_df_to_parquet(
-                result, 
-                os.path.join(self.data_dir, save_path)
-            )
-            print(f"✓ Saved to {save_path}\n")
-
-        return result
     
     # async def summarize_news(self, news_text: str, prompt: str = None) -> str:
     #     if prompt is None:
