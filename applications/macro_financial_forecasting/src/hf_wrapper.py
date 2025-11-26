@@ -54,9 +54,9 @@ class HFInstructorCompletions:
 
     async def _call_hf(self, messages: list[dict]) -> str:
         """Low-level HF chat completion call."""
-        result = await self.parent.client.chat_completion(
+        result = await self.parent.client.text_generation(
             model=self.parent.model,
-            messages=messages,
+            inputs=messages,
         )
         return result.choices[0].message["content"]
 
