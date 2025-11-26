@@ -1,37 +1,123 @@
+import json
+import re
 from huggingface_hub import AsyncInferenceClient
 from pydantic import BaseModel, ValidationError
 
-class HuggingFaceChat:
-    def __init__(self, client, model):
+
+class HFInstructorChat:
+    """Instructor-style wrapper for Hugging Face AsyncInferenceClient."""
+
+    def __init__(self, client: AsyncInferenceClient, model: str):
         self.client = client
         self.model = model
-        self.completions = HuggingFaceChat.Completions(self)
+        self.completions = HFInstructorCompletions(self)
 
-    class Completions:
-        def __init__(self, parent):
-            self.parent = parent
 
-        async def create(self, response_model: BaseModel, messages, max_retries=3):
-            # For Llama Instruct: use chat_completion
-            result = await self.parent.client.chat_completion(
-                model=self.parent.model,
-                messages=messages
+class HFInstructorCompletions:
+    def __init__(self, parent: HFInstructorChat):
+        self.parent = parent
+
+    async def create(
+        self,
+        response_model: type[BaseModel] | None,
+        messages: list[dict],
+        max_retries: int = 3
+    ):
+        """Main entry point, similar to instructor.Client.chat.completions.create."""
+
+        # ---- 1. Inject JSON enforcement if response_model is provided ----
+        if response_model:
+            messages = self._inject_schema_prompt(messages, response_model)
+
+        # ---- 2. Retry loop to enforce JSON validity ----
+        last_exception = None
+
+        for attempt in range(max_retries):
+            try:
+                raw = await self._call_hf(messages)
+                cleaned = self._clean_json_string(raw)
+
+                if not response_model:
+                    return cleaned  # No schema requested → return raw text
+
+                return response_model.parse_raw(cleaned)
+
+            except ValidationError as e:
+                last_exception = e
+                # try again after cleaning
+            except json.JSONDecodeError as e:
+                last_exception = e
+                # try again
+
+        # After retries exhausted
+        raise ValueError(f"Response validation failed after {max_retries} retries: {last_exception}")
+
+    async def _call_hf(self, messages: list[dict]) -> str:
+        """Low-level HF chat completion call."""
+        result = await self.parent.client.chat_completion(
+            model=self.parent.model,
+            messages=messages,
+        )
+        return result.choices[0].message["content"]
+
+    # ---------- JSON Prompt Injection ----------
+    def _inject_schema_prompt(self, messages, response_model):
+        """Inject Instructor-style JSON schema instructions."""
+        schema = response_model.schema_json(indent=2)
+
+        system_msg = {
+            "role": "system",
+            "content": (
+                "You are a strict JSON generator.\n"
+                "Return ONLY valid JSON that can be parsed without errors.\n"
+                "Follow this exact JSON schema:\n"
+                f"{schema}\n"
+                "Do NOT include markdown, code fences, comments, or any text outside the JSON object."
             )
+        }
 
-            generated_text = result.choices[0].message["content"]
+        # Prepend schema instructions
+        return [system_msg] + messages
 
-            # If a response_model is given, validate & parse it
-            if response_model:
-                try:
-                    return response_model.parse_raw(generated_text)
-                except ValidationError as e:
-                    raise ValueError(f"Response validation failed: {e}") from e
+    # ---------- JSON Cleaning / Repair Logic ----------
+    def _clean_json_string(self, text: str) -> str:
+        """Fix common JSON formatting problems."""
 
-            return generated_text
+        # Remove markdown fences
+        text = re.sub(r"```json|```", "", text).strip()
+
+        # Attempt naive JSON load — if this works, return immediately
+        try:
+            json.loads(text)
+            return text
+        except Exception:
+            pass
+
+        # Try extracting first {...} block
+        m = re.search(r"\{[\s\S]*\}", text)
+        if m:
+            candidate = m.group(0)
+            try:
+                json.loads(candidate)
+                return candidate
+            except Exception:
+                pass
+
+        # Try adding missing quotes around keys
+        candidate = re.sub(r"(\w+):", r'"\1":', text)
+        try:
+            json.loads(candidate)
+            return candidate
+        except Exception:
+            pass
+
+        # Last resort — return raw text and let Pydantic raise
+        return text
 
 
+# ---------- Final User-Facing Client ----------
 class HFInstructorClient:
-    def __init__(self, model="meta-llama/Llama-3.1-8B-Instruct"):
+    def __init__(self, model: str):
         self.client = AsyncInferenceClient()
         self.model = model
-        self.chat = HuggingFaceChat(self.client, self.model)
+        self.chat = HFInstructorChat(self.client, self.model)
