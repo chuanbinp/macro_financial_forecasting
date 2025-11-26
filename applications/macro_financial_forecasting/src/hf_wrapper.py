@@ -5,33 +5,33 @@ class HuggingFaceChat:
     def __init__(self, client, model):
         self.client = client
         self.model = model
+        self.completions = HuggingFaceChat.Completions(self)
 
     class Completions:
         def __init__(self, parent):
             self.parent = parent
 
         async def create(self, response_model: BaseModel, messages, max_retries=3):
-            prompt = messages[0].get("content", "")
-            result = await self.parent.client.chat.call(prompt, model=self.parent.model)
-            generated_text = result[0]["generated_text"]
+            # For Llama Instruct: use chat_completion
+            result = await self.parent.client.chat_completion(
+                model=self.parent.model,
+                messages=messages
+            )
 
-            # Validate and parse using Pydantic response_model if provided
+            generated_text = result.choices[0].message["content"]
+
+            # If a response_model is given, validate & parse it
             if response_model:
                 try:
-                    parsed = response_model.parse_raw(generated_text)
-                    return parsed
+                    return response_model.parse_raw(generated_text)
                 except ValidationError as e:
                     raise ValueError(f"Response validation failed: {e}") from e
-            else:
-                # Return raw text if no model provided
-                return generated_text
 
-    def __post_init__(self):
-        self.chat = HuggingFaceChat.Completions(self)
+            return generated_text
+
 
 class HFInstructorClient:
-    def __init__(self, model="gpt2"):
+    def __init__(self, model="meta-llama/Llama-3.1-8B-Instruct"):
         self.client = AsyncInferenceClient()
         self.model = model
         self.chat = HuggingFaceChat(self.client, self.model)
-        self.chat.completions = HuggingFaceChat.Completions(self.chat)
