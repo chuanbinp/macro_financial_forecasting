@@ -5,6 +5,7 @@ from tqdm.asyncio import tqdm_asyncio
 import instructor
 import pandas as pd
 import os
+import re
 
 from config import Config
 from data_model.bloomberg_news_entry import BloombergNewsEntry
@@ -33,9 +34,15 @@ class NewsProcessor:
         self.deberta = DebertaIndustryClassifier(config)
 
     def remove_redundant_info(self, entries: List[BloombergNewsEntry]) -> List[BloombergNewsEntry]:
-        delimiter = "To contact the editor responsible for this story:"
-        return [entry.Article.split(delimiter)[0].strip() for entry in entries]
+        # Matches: To contact the editor(s)/reporter(s)...
+        pattern = re.compile(r"To contact the (editor|editors|reporter|reporters).*", re.DOTALL)
 
+        for entry in entries:
+            # Remove everything from the boilerplate onward
+            entry.Article = re.sub(pattern, "", entry.Article).strip()
+
+        return entries
+    
     def group_by_date_and_industry(self, df: pd.DataFrame, save_path: str = None):
         df = (
             df.groupby(['Industry', 'Date'])
@@ -136,17 +143,26 @@ class NewsProcessor:
             impactful_news = [
                 {
                     'Headline': article['Headline'],
-                    'Article': article['Article']
+                    'Article': article['Article'],
+                    'SentimentScore': article['SentimentScore']
                 }
                 for article in top_articles
             ]
+
+            # Calculate average sentiment of impactful news
+            avg_sentiment = sum(article['SentimentScore'] for article in top_articles) / len(top_articles)
             
-            return impactful_news
+            return {
+                'impactful_news': impactful_news,
+                'avg_sentiment': avg_sentiment
+            }
         
         # Apply to each row with progress bar
         print(f"Extracting top {top_n} impactful news per (Industry, Date) pair...")
         tqdm.pandas(desc="Processing groups")
-        df_result['ImpactfulNews'] = df_result['News'].progress_apply(get_top_impactful)
+        results = df_result['News'].progress_apply(get_top_impactful)
+        df_result['ImpactfulNews'] = results.apply(lambda x: x['impactful_news'])
+        df_result['AvgSentimentScore'] = results.apply(lambda x: x['avg_sentiment'])
         
         # Sort by date and industry
         df_result = df_result.sort_values(['Date', 'Industry']).reset_index(drop=True)
