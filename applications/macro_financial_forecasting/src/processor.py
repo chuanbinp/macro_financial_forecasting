@@ -21,7 +21,7 @@ class NewsProcessor:
         #     api_key=config.openai_api_key,
         #     async_client=True
         # )
-        self.client = HFInstructorClient(model="google/gemma-2-9b-it")
+        self.client = HFInstructorClient(model="mistralai/Mistral-7B-Instruct-v0.3")
         self.semaphore = asyncio.Semaphore(concurrency_limit)
         self.batch_size = batch_size
         self.data_dir = config.dataset_dir
