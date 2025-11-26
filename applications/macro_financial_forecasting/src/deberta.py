@@ -13,7 +13,7 @@ class DebertaIndustryClassifier:
             "zero-shot-classification",
             model=config.deberta_model,
             device=0 if torch.cuda.is_available() else -1,
-            batch_size=16
+            batch_size=32
         )
         
         # GICS sector labels
@@ -23,7 +23,7 @@ class DebertaIndustryClassifier:
         self.max_chars = 1800  # ~450 tokens * 4 chars/token
         
         # Optimal batch size for outer loop processing
-        self.optimal_batch_size = 16 if torch.cuda.is_available() else 4
+        self.optimal_batch_size = 32 if torch.cuda.is_available() else 8
     
     
     def _truncate_texts(self, texts: List[str]) -> List[str]:

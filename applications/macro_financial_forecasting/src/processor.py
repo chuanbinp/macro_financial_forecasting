@@ -43,6 +43,99 @@ class NewsProcessor:
             ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
         return df
     
+    def prepare_impactful_news(
+        self, 
+        df: pd.DataFrame,
+        save_path: str = None
+    ) -> pd.DataFrame:
+        """
+        Process grouped news DataFrame to filter and identify impactful news.
+        Expects DataFrame from group_by_date_and_industry() with columns: Industry, Date, News
+        
+        Args:
+            df: Grouped DataFrame with 'News' column containing list of article dicts
+            save_path: Optional path to save the resulting DataFrame
+            
+        Returns:
+            DataFrame with ImpactfulNews column containing top 2 articles by sentiment
+        """
+        # 1. Drop rows where Industry == "None" and show count
+        none_count = (df['Industry'] == 'None').sum()
+        df_filtered = df[df['Industry'] != 'None'].copy()
+        
+        print(f"\n{'='*60}")
+        print(f"Dropped {none_count} (Industry, Date) pairs with Industry='None'")
+        print(f"Remaining pairs: {len(df_filtered)}")
+        print(f"{'='*60}\n")
+        
+        # 2. Calculate article counts for each (Industry, Date) pair
+        df_filtered['ArticleCount'] = df_filtered['News'].apply(len)
+        
+        print("Frequency Count by (Industry, Date):")
+        freq_display = df_filtered[['Industry', 'Date', 'ArticleCount']].copy()
+        print(freq_display.to_string(index=False))
+        print(f"\n{'='*60}\n")
+        
+        # Display summary statistics
+        print("Summary Statistics:")
+        print(f"Total unique (Industry, Date) pairs: {len(df_filtered)}")
+        print(f"Average articles per pair: {df_filtered['ArticleCount'].mean():.2f}")
+        print(f"Max articles in a pair: {df_filtered['ArticleCount'].max()}")
+        print(f"Min articles in a pair: {df_filtered['ArticleCount'].min()}")
+        print(f"Total articles: {df_filtered['ArticleCount'].sum()}")
+        print(f"\n{'='*60}\n")
+        
+        # 3. Create ImpactfulNews column with top 2 articles by absolute sentiment score
+        def get_top_impactful(news_list):
+            """Extract top 2 articles by absolute sentiment score from news list."""
+            if not news_list:
+                return []
+            
+            # Sort by absolute sentiment score
+            sorted_news = sorted(
+                news_list,
+                key=lambda x: abs(x.get('SentimentScore', 0)),
+                reverse=True
+            )
+            
+            # Take top 2
+            top_2 = sorted_news[:2]
+            
+            # Extract only needed fields
+            impactful_news = [
+                {
+                    'Headline': article['Headline'],
+                    # 'SentimentScore': article['SentimentScore'],
+                    'Article': article['Article']
+                }
+                for article in top_2
+            ]
+            
+            return impactful_news
+        
+        # Apply to each row
+        df_filtered['ImpactfulNews'] = df_filtered['News'].apply(get_top_impactful)
+        
+        # Calculate average sentiment for each group
+        # df_filtered['AvgSentiment'] = df_filtered['News'].apply(
+        #     lambda news_list: sum(article.get('SentimentScore', 0) for article in news_list) / len(news_list) if news_list else 0
+        # )
+        
+        # Sort by date and industry
+        result = df_filtered.sort_values(['Date', 'Industry']).reset_index(drop=True)
+        
+        # Keep only necessary columns for final output
+        # result = result[['Industry', 'Date', 'ArticleCount', 'AvgSentiment', 'ImpactfulNews']]
+        
+        # Save if path provided
+        if save_path:
+            ParquetUtil.save_df_to_parquet(
+                result, 
+                os.path.join(self.data_dir, save_path)
+            )
+
+        return result
+    
     def enrich_news_entries_with_classifications(
         self, 
         entries: List[BloombergNewsEntry],
@@ -85,6 +178,83 @@ class NewsProcessor:
         print(f"Completed processing {len(df)} entries")
 
         return df
+    
+    def prepare_impactful_news(
+        self, 
+        df: pd.DataFrame,
+        save_path: str = None
+        ) -> pd.DataFrame:
+        """
+        Process news DataFrame to filter, analyze, and identify impactful news.
+
+        Args:
+            df: DataFrame with columns: Industry, Date, SentimentScore, and news fields
+            save_path: Optional path to save the resulting DataFrame
+            
+        Returns:
+            DataFrame grouped by (Industry, Date) with ImpactfulNews column
+        """
+        # 1. Drop rows where Industry == "None" and show count
+        none_count = (df['Industry'] == 'None').sum()
+        df_filtered = df[df['Industry'] != 'None'].copy()
+
+        print(f"\n{'='*60}")
+        print(f"Dropped {none_count} articles with Industry='None'")
+        print(f"Remaining articles: {len(df_filtered)}")
+        print(f"{'='*60}\n")
+
+        # 2. Get frequency count for each (Industry, Date) pair
+        frequency = df_filtered.groupby(['Industry', 'Date']).size().reset_index(name='ArticleCount')
+
+        print("Frequency Count by (Industry, Date):")
+        print(frequency.to_string(index=False))
+        print(f"\n{'='*60}\n")
+
+        # Display summary statistics
+        print("Summary Statistics:")
+        print(f"Total unique (Industry, Date) pairs: {len(frequency)}")
+        print(f"Average articles per pair: {frequency['ArticleCount'].mean():.2f}")
+        print(f"Max articles in a pair: {frequency['ArticleCount'].max()}")
+        print(f"Min articles in a pair: {frequency['ArticleCount'].min()}")
+        print(f"\n{'='*60}\n")
+
+        # 3. Create ImpactfulNews column with top 2 articles by absolute sentiment score
+        def get_top_impactful(group):
+            # Sort by absolute sentiment score (most extreme sentiment = most impactful)
+            group_sorted = group.sort_values(
+                by='SentimentScore', 
+                key=lambda x: abs(x),  # Sort by absolute value
+                ascending=False
+            )
+            
+            # Take top 2
+            top_2 = group_sorted.head(2)
+            
+            # Create list of impactful news with key fields
+            impactful_news = top_2[[
+                'Headline', 
+                'Article'
+            ]].to_dict('records')
+            
+            return pd.Series({
+                'ImpactfulNews': impactful_news,
+            })
+
+        # Group and create final DataFrame
+        result = df_filtered.groupby(['Industry', 'Date']).apply(get_top_impactful).reset_index()
+
+        # Sort by date and industry
+        result = result.sort_values(['Date', 'Industry']).reset_index(drop=True)
+
+        # Save if path provided
+        if save_path:
+            ParquetUtil.save_df_to_parquet(
+                result, 
+                os.path.join(self.data_dir, save_path)
+            )
+            print(f"✓ Saved to {save_path}\n")
+
+        return result
     
     # async def summarize_news(self, news_text: str, prompt: str = None) -> str:
     #     if prompt is None:
