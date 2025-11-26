@@ -31,7 +31,11 @@ class NewsProcessor:
         self.prompt_instructions = config.prompt_instructions
         self.finbert = FinBertSentiment(config)
         self.deberta = DebertaIndustryClassifier(config)
-    
+
+    def remove_redundant_info(self, entries: List[BloombergNewsEntry]) -> List[BloombergNewsEntry]:
+        delimiter = "To contact the editor responsible for this story:"
+        return [entry.Article.split(delimiter)[0].strip() for entry in entries]
+
     def group_by_date_and_industry(self, df: pd.DataFrame, save_path: str = None):
         df = (
             df.groupby(['Industry', 'Date'])
@@ -199,6 +203,42 @@ class NewsProcessor:
 
         return df
     
+    def get_consolidated_sentiment(
+        self, 
+        df: pd.DataFrame,
+        save_path: str = None
+    ) -> pd.DataFrame:
+    
+        if df.empty:
+            return pd.DataFrame()
+
+        # Extract article texts for batch processing
+        news_texts = [
+            "\n".join(
+                entry["Headline"] + ". " + entry["Article"][:2048 // len(row)]
+                for entry in row
+            )
+            for row in df["ImpactfulNews"]
+            if len(row) > 0
+        ]
+
+        print(f"Processing {len(news_texts)} news entries...")
+
+        # Process sequentially (GPU-bound operations)
+        sentiment_scores = self.finbert.get_sentiment_scores(news_texts)
+        df['SentimentScore'] = sentiment_scores
+
+        # Save if path provided
+        if save_path:
+            ParquetUtil.save_df_to_parquet(
+                df, 
+                os.path.join(self.data_dir, save_path)
+            )
+        
+        print(f"Completed processing {len(df)} entries")
+
+        return df
+    
     # async def summarize_news(self, news_text: str, prompt: str = None) -> str:
     #     if prompt is None:
     #         prompt = self.prompt_instructions["summarize_daily"]
@@ -254,35 +294,35 @@ class NewsProcessor:
 
     #     return results
 
-    # async def sentiment_explanation(
-    #     self,
-    #     industry: str,
-    #     summary: str,
-    #     finbert_score: float = None,
-    #     gm_news: str = None,
-    #     prompt: str = None
-    # ) -> str:
-    #     # Compose prompt for explanation with precomputed finbert_score
-    #     if prompt is None:
-    #         prompt = self.prompt_instructions["sentiment_explanation"]
+    async def sentiment_explanation(
+        self,
+        industry: str,
+        impact_news: str,
+        finbert_score: float = None,
+        gm_news: str = None,
+        prompt: str = None
+    ) -> str:
+        # Compose prompt for explanation with precomputed finbert_score
+        if prompt is None:
+            prompt = self.prompt_instructions["sentiment_explanation"]
 
-    #     prompt += "\n"
-    #     prompt += f"\nIndustry:\n{industry}"
-    #     prompt += f"\nIndustry Summary:\n{summary}"
-    #     if finbert_score is not None:
-    #         prompt += f"\nFinBERT Score:\n{finbert_score:.3f}"
-    #     if gm_news:
-    #         prompt += "\n"
-    #         prompt += f"\nTake into account the general market news for the same date to further inform your sentiment analysis.\n"
-    #         prompt += f"\nGeneral Market News (same date):\n{gm_news}\n"
+        prompt += "\n"
+        prompt += f"\nIndustry:\n{industry}"
+        prompt += f"\nIndustry News:\n{impact_news}"
+        if finbert_score is not None:
+            prompt += f"\nFinBERT Score:\n{finbert_score:.3f}"
+        if gm_news:
+            prompt += "\n"
+            prompt += f"\nTake into account the general market news for the same date to further inform your sentiment analysis.\n"
+            prompt += f"\nGeneral Market News (same date):\n{gm_news}\n"
 
-    #     async with self.semaphore:
-    #         result = await self.client.chat.completions.create(
-    #             response_model=SentimentResult,
-    #             messages=[{"role": "user", "content": prompt}],
-    #             max_retries=3
-    #         )
-    #     return result.explanation
+        async with self.semaphore:
+            result = await self.client.chat.completions.create(
+                response_model=SentimentResult,
+                messages=[{"role": "user", "content": prompt}],
+                max_retries=3
+            )
+        return result.explanation
 
 
     # async def process_dataframe(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
