@@ -17,12 +17,12 @@ from hf_wrapper import HFInstructorClient
 
 class NewsProcessor:
     def __init__(self, config: Config, concurrency_limit=64, batch_size=10_000):
-        # self.client = instructor.from_provider(
-        #     config.llm_model,
-        #     api_key=config.openai_api_key,
-        #     async_client=True
-        # )
-        self.client = HFInstructorClient(model="google/gemma-2-2b")
+        self.client = instructor.from_provider(
+            config.llm_model,
+            api_key=config.openai_api_key,
+            async_client=True
+        )
+        # self.client = HFInstructorClient(model="google/gemma-2-2b")
         self.semaphore = asyncio.Semaphore(concurrency_limit)
         self.batch_size = batch_size
         self.data_dir = config.dataset_dir
@@ -30,6 +30,73 @@ class NewsProcessor:
         self.prompt_instructions = config.prompt_instructions
         self.finbert = FinBertSentiment(config)
         self.deberta = DebertaIndustryClassifier(config)
+    
+    def group_by_date_and_industry(self, entries: List[BloombergNewsEntry], save_path: str = None):
+        df = pd.DataFrame([entry.dict() for entry in entries])
+        df = (
+            df.groupby(['Industry', 'Date'])
+            .apply(lambda x: x.to_dict(orient='records'))
+            .reset_index()
+            .rename(columns={0: 'News'})
+        )
+        if save_path and df is not None:
+            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
+        return df
+    
+    def enrich_news_entries_with_classifications(
+        self, 
+        entries: List[BloombergNewsEntry],
+        save_path: str = None
+    ) -> pd.DataFrame:
+        """
+        Enrich Bloomberg news entries with sentiment scores and industry classifications.
+        
+        Args:
+            entries: List of BloombergNewsEntry pydantic objects
+            save_path: Optional path to save the resulting DataFrame as parquet
+            
+        Returns:
+            DataFrame with all entry fields plus SentimentScore and Industry columns
+        """
+        if not entries:
+            return pd.DataFrame()
+
+        # Extract article texts for batch processing
+        news_texts = [entry.Headline + "\n\n" + entry.Article for entry in entries]
+
+        print(f"Processing {len(news_texts)} news entries...")
+
+        # Process sequentially (GPU-bound operations)
+        sentiment_scores = self.finbert.get_sentiment_scores(news_texts)
+        industry_results = self.deberta.classify_industry(news_texts)
+
+        # Convert to DataFrame with all fields
+        df = pd.DataFrame([entry.dict() for entry in entries])
+        df['SentimentScore'] = sentiment_scores
+        df['Industry'] = industry_results
+
+        # Save if path provided
+        if save_path:
+            ParquetUtil.save_df_to_parquet(
+                df, 
+                os.path.join(self.data_dir, save_path)
+            )
+        
+        print(f"Completed processing {len(df)} entries")
+
+        return df
+    
+    # async def summarize_news(self, news_text: str, prompt: str = None) -> str:
+    #     if prompt is None:
+    #         prompt = self.prompt_instructions["summarize_daily"]
+    #     prompt += f"\nArticle:\n{news_text}"
+    #     async with self.semaphore:
+    #         result = await self.client.chat.completions.create(
+    #             response_model=NewsSummary,
+    #             messages=[{"role": "user", "content": prompt}],
+    #             max_retries=3
+    #         )
+    #     return result.summary
 
     # async def extract_entry(self, entry: BloombergNewsEntry, prompt: str) -> BloombergNewsEntry:
     #     message_content = (
@@ -73,85 +140,6 @@ class NewsProcessor:
     #         ParquetUtil.save_pydantic_to_parquet(results, batch_filename)
 
     #     return results
-    
-    def group_by_date_and_industry(self, entries: List[BloombergNewsEntry], save_path: str = None):
-        df = pd.DataFrame([entry.dict() for entry in entries])
-        df = (
-            df.groupby(['Industry', 'Date'])
-            .apply(lambda x: x.to_dict(orient='records'))
-            .reset_index()
-            .rename(columns={0: 'News'})
-        )
-        if save_path and df is not None:
-            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
-        return df
-    
-    # async def summarize_news(self, news_text: str, prompt: str = None) -> str:
-    #     if prompt is None:
-    #         prompt = self.prompt_instructions["summarize_daily"]
-    #     prompt += f"\nArticle:\n{news_text}"
-    #     async with self.semaphore:
-    #         result = await self.client.chat.completions.create(
-    #             response_model=NewsSummary,
-    #             messages=[{"role": "user", "content": prompt}],
-    #             max_retries=3
-    #         )
-    #     return result.summary
-    
-    async def batch_finbert_sentiment_scores(self, news_texts: List[str]) -> List[float]:
-        # Calls FinBERT in batch (async)
-        scores = await self.finbert.async_get_sentiment_scores(news_texts)
-        return scores
-    
-    async def batch_industry_classification(self, news_texts: List[str]) -> List:
-        # Calls DeBERTa in batch (async)
-        return await self.deberta.async_classify_industries(news_texts)
-    
-    async def enrich_news_entries_with_classifications(
-        self, 
-        entries: List[BloombergNewsEntry],
-        save_path: str = None
-        ) -> pd.DataFrame:
-        """
-        Enrich Bloomberg news entries with sentiment scores and industry classifications.
-        Updates the Industry field with zero-shot classification and adds sentiment to DataFrame.
-
-        Args:
-            entries: List of BloombergNewsEntry pydantic objects (will be modified in-place)
-            save_path: Optional path to save the resulting DataFrame as parquet
-            
-        Returns:
-            DataFrame with all entry fields plus SentimentScore column
-        """
-        if not entries:
-            return pd.DataFrame()
-
-        # Extract article texts for batch processing
-        news_texts = [entry.Headline + "\n\n" +entry.Article for entry in entries]
-
-        # Run both classifications concurrently
-        sentiment_scores, industry_labels = await asyncio.gather(
-            self.batch_finbert_sentiment_scores(news_texts),
-            self.batch_industry_classification(news_texts)
-        )
-
-        # Update entries with classified industry
-        # for i, entry in enumerate(entries):
-        #     entry.Industry = industry_labels[i]
-
-        # Convert to DataFrame with all fields
-        df = pd.DataFrame([entry.dict() for entry in entries])
-        df['SentimentScore'] = sentiment_scores
-        df['Industry'] = industry_labels
-
-        # Save if path provided
-        if save_path:
-            ParquetUtil.save_df_to_parquet(
-                df, 
-                os.path.join(self.data_dir, save_path)
-            )
-
-        return df
 
     # async def sentiment_explanation(
     #     self,
