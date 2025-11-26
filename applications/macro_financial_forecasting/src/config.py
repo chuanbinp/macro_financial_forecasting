@@ -24,6 +24,7 @@ class Config:
         self.rss_feeds: List[str] = [f.strip() for f in feeds_str.split(",") if f.strip()]
 
         self.finbert_model: str = os.getenv("FINBERT_MODEL", "ProsusAI/finbert")
+        self.deberta_model: str = os.getenv("DEBERTA_MODEL", "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
 
         # Prompt Instructions
         self.prompt_instructions: Dict[str] = {
