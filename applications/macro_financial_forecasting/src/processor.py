@@ -200,17 +200,18 @@ class NewsProcessor:
         news_texts = [entry.Headline + "\n\n" + entry.Article for entry in entries]
 
         print(f"Processing {len(news_texts)} news entries...")
-
-        # Process sequentially (GPU-bound operations)
-        sentiment_scores = self.finbert.get_sentiment_scores(news_texts)
-        industry_results = self.deberta.classify_industry(news_texts)
-
-        # Convert to DataFrame with all fields
         df = pd.DataFrame([entry.dict() for entry in entries])
-        df['SentimentScore'] = sentiment_scores
-        df['Industry'] = industry_results
 
-        # Save if path provided
+        sentiment_scores = self.finbert.get_sentiment_scores(news_texts)
+        df['SentimentScore'] = sentiment_scores
+        if save_path:
+            ParquetUtil.save_df_to_parquet(
+                df, 
+                os.path.join(self.data_dir, save_path)
+            )
+
+        industry_results = self.deberta.classify_industry(news_texts)
+        df['Industry'] = industry_results
         if save_path:
             ParquetUtil.save_df_to_parquet(
                 df, 
