@@ -81,10 +81,10 @@ class NewsProcessor:
         # 2. Calculate article counts for each (Industry, Date) pair
         df_filtered['ArticleCount'] = df_filtered['News'].apply(len)
         
-        print("Frequency Count by (Industry, Date):")
-        freq_display = df_filtered[['Industry', 'Date', 'ArticleCount']].copy()
-        print(freq_display.to_string(index=False))
-        print(f"\n{'='*60}\n")
+        # print("Frequency Count by (Industry, Date):")
+        # freq_display = df_filtered[['Industry', 'Date', 'ArticleCount']].copy()
+        # print(freq_display.to_string(index=False))
+        # print(f"\n{'='*60}\n")
         
         # Display summary statistics
         print("Summary Statistics:")
@@ -92,6 +92,9 @@ class NewsProcessor:
         print(f"Average articles per pair: {df_filtered['ArticleCount'].mean():.2f}")
         print(f"Max articles in a pair: {df_filtered['ArticleCount'].max()}")
         print(f"Min articles in a pair: {df_filtered['ArticleCount'].min()}")
+        print(f"25th percentile: {df_filtered['ArticleCount'].quantile(0.25)}")
+        print(f"50th percentile: {df_filtered['ArticleCount'].quantile(0.5)}")
+        print(f"75th percentile: {df_filtered['ArticleCount'].quantile(0.75)}")
         print(f"Total articles: {df_filtered['ArticleCount'].sum()}")
         print(f"\n{'='*60}\n")
         
@@ -324,12 +327,12 @@ class NewsProcessor:
 
         prompt += "\n"
         prompt += f"\nIndustry:\n{industry}"
-        prompt += f"\nIndustry News:\n{impact_news}"
+        prompt += f"\nNews:\n{impact_news}"
         if finbert_score is not None:
-            prompt += f"\nFinBERT Score:\n{finbert_score:.3f}"
+            prompt += f"\nFinBERT (-1 to +1):\n{finbert_score:.3f}"
         if gm_news:
             prompt += "\n"
-            prompt += f"\nTake into account the general market news for the same date to further inform your sentiment analysis.\n"
+            prompt += f"\nTake into account the general market news to further inform your sentiment analysis.\n"
             prompt += f"\nGeneral Market News (same date):\n{gm_news}\n"
 
         async with self.semaphore:
@@ -340,6 +343,41 @@ class NewsProcessor:
             )
         return result.explanation
 
+    async def get_explanation(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
+                # 1. Sort by date
+                # df = df.sort_values("Date").reset_index(drop=True)
+
+                # 2. Summarize asynchronously with order preserved
+                # summarize_tasks = [self.summarize_news(news_text) for news_text in df["News"]]
+                # summaries = await tqdm_asyncio.gather(*summarize_tasks, desc="Summarizing")
+                # df["Summary"] = summaries
+
+                # 3. Batch FinBERT sentiment scoring
+                # news_list = [str(text) for text in df["News"].tolist()]
+                # finbert_scores = await self.batch_finbert_sentiment_scores(news_list)
+                # df["SentimentScore"] = finbert_scores
+
+        # 4. Prepare general market news dict
+        gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["ImpactfulNews"].first().to_dict()
+
+        # 5. Generate sentiment explanations preserving order
+        sentiment_tasks = []
+        for _, row in df.iterrows():
+            gm_news = gm_by_date.get(row["Date"])
+            sentiment_tasks.append(self.sentiment_explanation(
+                row["Industry"],
+                row["ImpactfulNews"],
+                finbert_score=row["SentimentScore"],
+                gm_news=gm_news
+            ))
+
+        explanations = await tqdm_asyncio.gather(*sentiment_tasks, desc="Explanation")
+        df["SentimentExplanation"] = explanations
+
+        if save_path and df is not None:
+            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
+
+        return df
 
     # async def process_dataframe(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
     #     # 1. Sort by date
