@@ -36,6 +36,6 @@ def process_bloomberg_news(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     df = processor.filter_and_analyze_news(df)
     df = processor.extract_impactful_news(df, top_n=3)
     df = processor.get_consolidated_sentiment(df)
-    df = processor.get_explanation(df)
+    df = await processor.get_explanation(df)
 
     return df.to_dict(orient="records")
