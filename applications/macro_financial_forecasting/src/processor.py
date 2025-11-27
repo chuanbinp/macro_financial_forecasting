@@ -301,7 +301,7 @@ class NewsProcessor:
                 row["Industry"],
                 row["ImpactfulNews"],
                 finbert_score=row["SentimentScore"],
-                avg_sentiment_score=row["AvgSentimentScore"]
+                avg_sentiment_score=row["AvgSentimentScore"],
                 gm_news=gm_news
             ))
 
