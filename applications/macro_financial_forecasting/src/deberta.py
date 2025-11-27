@@ -43,10 +43,13 @@ class DebertaIndustryClassifier:
         truncated_texts = self._truncate_texts(texts)
         
         # Process all texts at once (pipeline handles internal batching)
+        dataset = [{"sequence": t} for t in truncated_texts]
+
         results = self.classifier(
-            truncated_texts,
-            self.industry_labels,
-            multi_label=False
+            dataset,
+            candidate_labels=self.industry_labels,
+            multi_label=False,
+            truncation=True
         )
         
         # Handle both single and multiple text results
