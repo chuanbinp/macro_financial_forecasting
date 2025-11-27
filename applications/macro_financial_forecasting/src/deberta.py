@@ -7,22 +7,14 @@ from tqdm import tqdm
 class DebertaIndustryClassifier:
     def __init__(self, config: Config):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
-        # Initialize zero-shot classification pipeline
         self.classifier = pipeline(
             "zero-shot-classification",
             model=config.deberta_model,
             device=0 if torch.cuda.is_available() else -1,
             batch_size=32
         )
-        
-        # GICS sector labels
         self.industry_labels = config.industries
-
-        # Truncate to ~450 tokens to leave room for hypothesis + special tokens
-        self.max_chars = 1800  # ~450 tokens * 4 chars/token
-        
-        # Optimal batch size for outer loop processing
+        self.max_chars = 1800 # Max chars to avoid token limit issues 
         self.optimal_batch_size = 32 if torch.cuda.is_available() else 8
     
     

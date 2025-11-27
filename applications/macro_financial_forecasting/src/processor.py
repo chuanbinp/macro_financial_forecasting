@@ -9,8 +9,6 @@ import re
 
 from config import Config
 from data_model.bloomberg_news_entry import BloombergNewsEntry
-from data_model.bloomberg_news_industry_and_keypoints import IndustryAndKeyPoints
-from data_model.bloomberg_news_summary import NewsSummary
 from data_model.bloomberg_news_sentiment_explanation import SentimentResult
 from utils.pydantic_parquet_util import ParquetUtil
 from finbert import FinBertSentiment
@@ -95,6 +93,7 @@ class NewsProcessor:
         print(f"25th percentile: {df_filtered['ArticleCount'].quantile(0.25)}")
         print(f"50th percentile: {df_filtered['ArticleCount'].quantile(0.5)}")
         print(f"75th percentile: {df_filtered['ArticleCount'].quantile(0.75)}")
+        print(f"Number of pairs with at least 3 articles: {(df_filtered['ArticleCount'] >= 3).sum()}")
         print(f"Total articles: {df_filtered['ArticleCount'].sum()}")
         print(f"\n{'='*60}\n")
         
@@ -258,6 +257,59 @@ class NewsProcessor:
 
         return df
     
+    async def sentiment_explanation(
+        self,
+        industry: str,
+        impact_news: str,
+        finbert_score: float = None,
+        gm_news: str = None,
+        prompt: str = None
+    ) -> str:
+        # Compose prompt for explanation with precomputed finbert_score
+        if prompt is None:
+            prompt = self.prompt_instructions["sentiment_explanation"]
+
+        prompt += "\n"
+        prompt += f"\nIndustry:\n{industry}"
+        prompt += f"\nNews:\n{impact_news}"
+        if finbert_score is not None:
+            prompt += f"\nFinBERT (-1 to +1):\n{finbert_score:.3f}"
+        if gm_news:
+            prompt += "\n"
+            prompt += f"\nTake into account the general market news to further inform your sentiment analysis.\n"
+            prompt += f"\nGeneral Market News (same date):\n{gm_news}\n"
+
+        async with self.semaphore:
+            result = await self.client.chat.completions.create(
+                response_model=SentimentResult,
+                messages=[{"role": "user", "content": prompt}],
+                max_retries=3
+            )
+        return result.explanation
+
+    async def get_explanation(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
+        # 1. Prepare general market news dict
+        gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["ImpactfulNews"].first().to_dict()
+
+        # 2. Generate sentiment explanations preserving order
+        sentiment_tasks = []
+        for _, row in df.iterrows():
+            gm_news = gm_by_date.get(row["Date"])
+            sentiment_tasks.append(self.sentiment_explanation(
+                row["Industry"],
+                row["ImpactfulNews"],
+                finbert_score=row["SentimentScore"],
+                gm_news=gm_news
+            ))
+
+        explanations = await tqdm_asyncio.gather(*sentiment_tasks, desc="Explanation")
+        df["SentimentExplanation"] = explanations
+
+        if save_path and df is not None:
+            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
+
+        return df
+
     # async def summarize_news(self, news_text: str, prompt: str = None) -> str:
     #     if prompt is None:
     #         prompt = self.prompt_instructions["summarize_daily"]
@@ -312,72 +364,6 @@ class NewsProcessor:
     #         ParquetUtil.save_pydantic_to_parquet(results, batch_filename)
 
     #     return results
-
-    async def sentiment_explanation(
-        self,
-        industry: str,
-        impact_news: str,
-        finbert_score: float = None,
-        gm_news: str = None,
-        prompt: str = None
-    ) -> str:
-        # Compose prompt for explanation with precomputed finbert_score
-        if prompt is None:
-            prompt = self.prompt_instructions["sentiment_explanation"]
-
-        prompt += "\n"
-        prompt += f"\nIndustry:\n{industry}"
-        prompt += f"\nNews:\n{impact_news}"
-        if finbert_score is not None:
-            prompt += f"\nFinBERT (-1 to +1):\n{finbert_score:.3f}"
-        if gm_news:
-            prompt += "\n"
-            prompt += f"\nTake into account the general market news to further inform your sentiment analysis.\n"
-            prompt += f"\nGeneral Market News (same date):\n{gm_news}\n"
-
-        async with self.semaphore:
-            result = await self.client.chat.completions.create(
-                response_model=SentimentResult,
-                messages=[{"role": "user", "content": prompt}],
-                max_retries=3
-            )
-        return result.explanation
-
-    async def get_explanation(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
-                # 1. Sort by date
-                # df = df.sort_values("Date").reset_index(drop=True)
-
-                # 2. Summarize asynchronously with order preserved
-                # summarize_tasks = [self.summarize_news(news_text) for news_text in df["News"]]
-                # summaries = await tqdm_asyncio.gather(*summarize_tasks, desc="Summarizing")
-                # df["Summary"] = summaries
-
-                # 3. Batch FinBERT sentiment scoring
-                # news_list = [str(text) for text in df["News"].tolist()]
-                # finbert_scores = await self.batch_finbert_sentiment_scores(news_list)
-                # df["SentimentScore"] = finbert_scores
-
-        # 4. Prepare general market news dict
-        gm_by_date = df[df["Industry"] == "General Market"].groupby("Date")["ImpactfulNews"].first().to_dict()
-
-        # 5. Generate sentiment explanations preserving order
-        sentiment_tasks = []
-        for _, row in df.iterrows():
-            gm_news = gm_by_date.get(row["Date"])
-            sentiment_tasks.append(self.sentiment_explanation(
-                row["Industry"],
-                row["ImpactfulNews"],
-                finbert_score=row["SentimentScore"],
-                gm_news=gm_news
-            ))
-
-        explanations = await tqdm_asyncio.gather(*sentiment_tasks, desc="Explanation")
-        df["SentimentExplanation"] = explanations
-
-        if save_path and df is not None:
-            ParquetUtil.save_df_to_parquet(df, os.path.join(self.data_dir, f"{save_path}"))
-
-        return df
 
     # async def process_dataframe(self, df: pd.DataFrame, save_path: str = None) -> pd.DataFrame:
     #     # 1. Sort by date

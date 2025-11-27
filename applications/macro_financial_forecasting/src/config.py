@@ -28,27 +28,27 @@ class Config:
 
         # Prompt Instructions
         self.prompt_instructions: Dict[str] = {
-"classify_and_keypoints": f'''You are a financial news analyst.
-1. Read the article carefully and classify its **primary industry sector** as "Industry".
+# "classify_and_keypoints": f'''You are a financial news analyst.
+# 1. Read the article carefully and classify its **primary industry sector** as "Industry".
 
-Industries must be one of:
-{self.industries}
+# Industries must be one of:
+# {self.industries}
 
-Guidelines:
-- Choose **"General Market"** if the article covers overall economic conditions,
-  government or central bank policies, currency movements, inflation, GDP,
-  interest rates, IMF or World Bank decisions, or broad market sentiment that
-  affects multiple sectors rather than one specific industry.
-- Choose **"None"** if the have no financial effects to any sector or general market.
-- If the article focuses on one company, classify it based on that company’s core sector.
+# Guidelines:
+# - Choose **"General Market"** if the article covers overall economic conditions,
+#   government or central bank policies, currency movements, inflation, GDP,
+#   interest rates, IMF or World Bank decisions, or broad market sentiment that
+#   affects multiple sectors rather than one specific industry.
+# - Choose **"None"** if the have no financial effects to any sector or general market.
+# - If the article focuses on one company, classify it based on that company’s core sector.
 
-2. Then, summarize the **5 most important points** of the article as "KeyPoints",
-each starting with a bullet ("-").
-''',
-"summarize_daily": f'''You are a financial news analyst.
-Read the articles carefully and Summarize the **5 to 10 most important points** as "Summary",
-each starting with a bullet ("-").
-''',
+# 2. Then, summarize the **5 most important points** of the article as "KeyPoints",
+# each starting with a bullet ("-").
+# ''',
+# "summarize_daily": f'''You are a financial news analyst.
+# Read the articles carefully and Summarize the **5 to 10 most important points** as "Summary",
+# each starting with a bullet ("-").
+# ''',
 "sentiment_explanation": f'''You are a financial news analyst.
 Think about how the news article impacts financial markets, especially in the Industry specified.
 Use your knowledge of economics, market trends, and investor behavior.
@@ -66,6 +66,6 @@ Given the following news article, produce a brief explanation of your score as "
             f"  dataset_name: {self.dataset_name}\n"
             f"  dataset_dir: {self.dataset_dir}\n"
             f"  rss_feeds: {self.rss_feeds}\n"
-            f"  prompt_instructions: {self.prompt_instructions["classify_and_keypoints"][:100]}... (truncated)\n"
+            f"  prompt_instructions: {self.prompt_instructions["sentiment_explanation"][:100]}... (truncated)\n"
             f")"
         )

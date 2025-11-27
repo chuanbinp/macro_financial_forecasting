@@ -48,7 +48,6 @@ class TrainDataLoader:
         # Try loading from saved local dataset first
         if os.path.exists(self.cache_path):
             print(f"Loading dataset from local cache at '{self.cache_path}'...")
-            # self.dataset = load_from_disk(self.cache_path)
             self.dataset = ParquetUtil.load_pydantic_from_parquet(self.cache_path, BloombergNewsEntry)
         else:
             self._download_dataset()
