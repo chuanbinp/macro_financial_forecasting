@@ -300,8 +300,8 @@ class NewsProcessor:
             sentiment_tasks.append(self.sentiment_explanation(
                 row["Industry"],
                 row["ImpactfulNews"],
-                finbert_score=row["SentimentScore"],
-                avg_sentiment_score=row["AvgSentimentScore"],
+                combined_finbert_score=row["SentimentScore"],
+                avg_finbert_score=row["AvgSentimentScore"],
                 gm_news=gm_news
             ))
 
