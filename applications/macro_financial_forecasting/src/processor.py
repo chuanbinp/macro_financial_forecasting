@@ -262,7 +262,8 @@ class NewsProcessor:
         self,
         industry: str,
         impact_news: str,
-        finbert_score: float = None,
+        combined_finbert_score: float = None,
+        avg_finbert_score: float = None,
         gm_news: str = None,
         prompt: str = None
     ) -> str:
@@ -273,8 +274,8 @@ class NewsProcessor:
         prompt += "\n"
         prompt += f"\nIndustry:\n{industry}"
         prompt += f"\nNews:\n{impact_news}"
-        if finbert_score is not None:
-            prompt += f"\nFinBERT (-1 to +1):\n{finbert_score:.3f}"
+        if combined_finbert_score is not None and avg_finbert_score is not None:
+            prompt += f"\nCombined/Average FinBERT (-1 to +1):\n{combined_finbert_score:.3f}/{avg_finbert_score:.3f}"
         if gm_news:
             prompt += "\n"
             prompt += f"\nTake into account the general market news to further inform your sentiment analysis.\n"
@@ -300,6 +301,7 @@ class NewsProcessor:
                 row["Industry"],
                 row["ImpactfulNews"],
                 finbert_score=row["SentimentScore"],
+                avg_sentiment_score=row["AvgSentimentScore"]
                 gm_news=gm_news
             ))
 
