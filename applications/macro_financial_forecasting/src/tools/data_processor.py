@@ -18,7 +18,7 @@ class ProcessNewsInput(BaseModel):
     data: List[BloombergNewsEntry]
 
 @tool(args_schema=ProcessNewsInput)
-def process_bloomberg_news(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def process_bloomberg_news(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Run the full NewsProcessor pipeline on raw Bloomberg RSS feed entries.
     Input: List of dicts with Headline, Link, Article, Date
