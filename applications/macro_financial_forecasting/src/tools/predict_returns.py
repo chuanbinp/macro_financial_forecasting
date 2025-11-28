@@ -71,9 +71,10 @@ def normalize_to_list(raw):
     raise ValueError(f"Unsupported type {type(raw)} for normalization")
 
 @tool(args_schema=PredictReturnsNextDayArgs)
-def predict_returns_next_day(json_data: str,
-                               lookback_days: int = 90) -> str:
-
+def predict_returns_next_day(json_data: str, lookback_days: int = 90) -> str:
+    """
+    Predict next-day returns based on processed financial news sentiment data.
+    """
     raw_list = normalize_to_list(json_data)
 
     # convert each dict → Pydantic model
