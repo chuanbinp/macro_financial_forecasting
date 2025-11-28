@@ -141,6 +141,9 @@ def predict_returns_next_day(json_data: str, lookback_days: int = 90) -> str:
 
     # 3. Download OHLCV for needed tickers over a rolling window
     tickers = sorted(df["index_ticker"].unique().tolist())
+    if "SPY" not in tickers:
+        tickers.append("SPY")
+
     max_date = df["Date"].max()
     start_date = max_date - pd.Timedelta(days=lookback_days)
     end_date = max_date
