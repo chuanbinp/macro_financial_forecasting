@@ -3,7 +3,7 @@ from typing import List, Dict
 
 @tool
 def get_mock_bloomberg_rss_feeds() -> List[Dict[str, str]]:
-    """Fetch mock news"""
+    """Fetch mock Bloomberg RSS news"""
     data = [{'Headline': 'Asian Stocks Ebb as Global Rally Loses Momentum: Markets Wrap',
     'Link': 'https://www.bloomberg.com/news/articles/2025-11-27/asian-stocks-to-ebb-as-global-equity-rally-stalls-markets-wrap',
     'Article': 'Asian stocks wobbled at the open Friday as the sharp rebound in global equities over the past week showed signs of losing momentum.',

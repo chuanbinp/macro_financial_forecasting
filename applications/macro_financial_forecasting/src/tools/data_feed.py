@@ -5,7 +5,7 @@ from typing import List, Dict
 
 @tool
 def get_bloomberg_rss_feeds(days: int = 1) -> List[Dict[str, str]]:
-    """Fetch Bloomberg RSS news items for the last N days."""
+    """Fetch all Bloomberg RSS news for the last N days. One call is enough."""
 
     from config import Config
     config = Config()
