@@ -38,4 +38,4 @@ async def process_bloomberg_news(data: List[Dict[str, Any]]) -> List[Dict[str, A
     df = processor.get_consolidated_sentiment(df)
     df = await processor.get_explanation(df)
 
-    return df.to_dict(orient="records")
+    return df.to_json(orient="records")
