@@ -7,6 +7,8 @@ from typing import Optional, List
 import json
 from datetime import datetime
 from langchain.tools import tool
+import re
+from json_repair import repair_json 
 
 class NewsArticle(BaseModel):
     """
@@ -37,10 +39,6 @@ class PredictReturnsNextDayArgs(BaseModel):
     Pydantic model for the arguments of the predict_returns_next_day tool.
     """
     json_data: str = Field(..., description="A JSON string representing a list of FinancialNewsSummary objects, output from process_bloomberg_news.")
-
-import re
-import json
-from json_repair import repair_json  # pip install json-repair
 
 def normalize_to_list(raw):
     if isinstance(raw, list):
