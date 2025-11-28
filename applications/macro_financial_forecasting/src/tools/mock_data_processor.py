@@ -2,7 +2,7 @@ from langchain.tools import tool
 from typing import List, Dict, Any
 
 @tool
-async def mock_process_bloomberg_news(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+async def mock_process_bloomberg_news() -> List[Dict[str, Any]]:
     """Mock process Bloomberg RSS news"""
     data = [{'Industry': 'General Market',
     'Date': '2025-11-27T22:29:53+00:00',
