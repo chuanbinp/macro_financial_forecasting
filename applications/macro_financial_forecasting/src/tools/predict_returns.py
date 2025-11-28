@@ -38,50 +38,39 @@ class PredictReturnsNextDayArgs(BaseModel):
     """
     json_data: str = Field(..., description="A JSON string representing a list of FinancialNewsSummary objects, output from process_bloomberg_news.")
 
-def normalize_to_list(raw):
-    """
-    Accepts: JSON string, Python list, dict, repr-ed JSON from LangChain.
-    Returns: Python list of dicts.
-    """
+import re
+import json
+from json_repair import repair_json  # pip install json-repair
 
-    # Case 1 — Already a Python list
+def normalize_to_list(raw):
     if isinstance(raw, list):
         return raw
-
-    # Case 2 — Already a Python dict (single summary)
     if isinstance(raw, dict):
         return [raw]
 
-    # Case 3 — LangChain sometimes gives a string with extra whitespace or quotes
     if isinstance(raw, str):
-        cleaned = raw.strip()
+        # Extract JSON from ```
+        json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', raw)
+        text = json_match.group(1) if json_match else raw
 
-        # remove surrounding quotes if agent added them
-        # Check for '" at start and "' at end (nested quotes case)
-        if cleaned.startswith("'\"") and cleaned.endswith("\"'"):
-            cleaned = cleaned[2:-2] 
-        elif cleaned.startswith("'") and cleaned.endswith("'"):
-            cleaned = cleaned[1:-1]
-        elif cleaned.startswith('"') and cleaned.endswith('"'):
-            cleaned = cleaned[1:-1]
+        cleaned = text.strip()
 
-        # Try parsing as JSON
+        # Strip markdown/quote wrappers progressively
+        # wrappers = ['```json', '```']
+        # for wrapper in wrappers:
+        #     if cleaned.startswith(wrapper) and cleaned.endswith(wrapper):
+        #         cleaned = cleaned[len(wrapper):-len(wrapper)].strip()
+        #     elif cleaned.startswith(f'"{wrapper}"') and cleaned.endswith(f'"{wrapper}"'):
+        #         cleaned = cleaned[1:-1].strip()
+
+        # Repair + parse
         try:
-            return json.loads(cleaned)
-        except Exception:
-            pass
+            repaired = repair_json(cleaned)
+            return json.loads(repaired)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse JSON: {e}\nValue (truncated): {repr(cleaned)[:200]}")
 
-        # Case 4 — Sometimes LangChain double-escapes JSON
-        try:
-            # Attempt to decode unicode escapes first
-            if '\\u' in cleaned or '\\\\' in cleaned: # Heuristic for double-escaped or unicode-escaped
-                cleaned = cleaned.encode("utf-8").decode("unicode_escape")
-            return json.loads(cleaned)
-        except Exception:
-            pass
-
-    # If all else fails
-    raise ValueError(f"Could not normalize input: {type(raw)}, value = {repr(raw)}")
+    raise ValueError(f"Unsupported type {type(raw)} for normalization")
 
 @tool(args_schema=PredictReturnsNextDayArgs)
 def predict_returns_next_day(json_data: str,
