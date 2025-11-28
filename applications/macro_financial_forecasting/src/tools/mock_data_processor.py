@@ -1,5 +1,6 @@
 from langchain.tools import tool
 from typing import List, Dict, Any
+import json
 
 @tool
 async def mock_process_bloomberg_news() -> List[Dict[str, Any]]:
@@ -50,4 +51,4 @@ async def mock_process_bloomberg_news() -> List[Dict[str, Any]]:
     'SentimentScore': -0.8677232862,
     'SentimentExplanation': 'The article carries a strong negative FinBERT sentiment (-0.858), indicating traders view it as unfavorable to financials in the near term. While gold benefits from Fed rate-cut expectations, the piece frames that environment as potentially dampening bank net interest margins and financial sector profitability, which drags sentiment in the Financials industry even as the commodity side improves.'}]
 
-    return data
+    return json.dumps(data)
