@@ -3,7 +3,7 @@ from typing import List, Dict, Any
 
 @tool
 async def mock_process_bloomberg_news(data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Fetch mock Bloomberg RSS news"""
+    """Mock process Bloomberg RSS news"""
     data = [{'Industry': 'General Market',
     'Date': '2025-11-27T22:29:53+00:00',
     'News': [{'Headline': 'Asian Stocks Ebb as Global Rally Loses Momentum: Markets Wrap',
