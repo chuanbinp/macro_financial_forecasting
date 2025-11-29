@@ -26,7 +26,6 @@ get_processor(config)
 def get_bloomberg_rss_feeds(days: int = 1) -> List[Dict[str, str]]:
     """Fetch all Bloomberg RSS news for the last N days. One call is enough."""
 
-    config = Config()
     feeds = config.rss_feeds[:3]
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
