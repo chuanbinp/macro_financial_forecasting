@@ -37,6 +37,14 @@ streamlit run streamlit.py
 - The project also provides an `environment.yml` (Conda) for reproducible environments. Prefer creating the Conda environment for binary dependencies (PyTorch, pyarrow, pandas) and then installing pip packages.
 - If you plan to use the Hugging Face Hub or the OpenAI SDK directly, add `huggingface-hub` and `openai` to your environment.
 
+## Docker
+Update config.env with your OPENAI_API_KEY before running container.
+```bash
+docker build --platform linux/amd64 -t agentic-macro-fincast:test .
+docker run -p 8501:8501 --env-file config.env agentic-macro-fincast:test
+#open http://localhost:8501/agentic-macro-fincast
+```
+
 ## Contributors
 
 - Chuan Bin Phoe
