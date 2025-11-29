@@ -22,15 +22,17 @@ llm = ChatOpenAI(model=config.langgraph_model, temperature=0)
 ## State
 class PipelineState(TypedDict):
     mode: str = "real"  # or "mock"
+    days_back: int = 1
     messages: List[BaseMessage]
     raw_data: Optional[List[Dict]] = None
     processed_data: Optional[pd.DataFrame] = None
     predictions: Optional[pd.DataFrame] = None
     summary: Optional[str] = None
 
-def create_initial_state(mode: str = "real") -> PipelineState:
+def create_initial_state(mode: str = "real", days_back: int = 1) -> PipelineState:
     return {
         "mode": mode,
+        "days_back": days_back,
         "messages": [],
         "raw_data": None,
         "processed_data": None,
@@ -52,7 +54,7 @@ def router_node(state: PipelineState):
 
 # Loaders
 def load_real_news(state: PipelineState):
-    raw_data = get_bloomberg_rss_feeds()
+    raw_data = get_bloomberg_rss_feeds(state["days_back"])
     return {
         **state,
         "messages": state["messages"] + [AIMessage(content=f"Loaded {len(raw_data)} news articles.")],
