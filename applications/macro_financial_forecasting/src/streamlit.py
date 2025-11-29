@@ -12,7 +12,7 @@ nest_asyncio.apply()
 
 # Page config
 st.set_page_config(
-    page_title="📈 Financial News Pipeline",
+    page_title="Financial News Pipeline",
     page_icon="📈",
     layout="wide",
     initial_sidebar_state="expanded",
