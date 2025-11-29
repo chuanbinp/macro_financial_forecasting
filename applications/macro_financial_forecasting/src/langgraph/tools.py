@@ -19,7 +19,8 @@ def get_processor(config: Config) -> NewsProcessor:
     return _processor_instance
 
 config = Config()
-_processor_instance = get_processor(config)
+_processor_instance = None
+get_processor(config)
 
 ## Functions to be used in the pipeline
 def get_bloomberg_rss_feeds(days: int = 1) -> List[Dict[str, str]]:

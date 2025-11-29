@@ -6,8 +6,13 @@ from typing import TypedDict, List, Dict, Optional
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from langchain_openai import ChatOpenAI
-
-from langgraph.tools import get_bloomberg_rss_feeds, get_mock_bloomberg_rss_feeds, process_bloomberg_news, mock_process_bloomberg_news, predict_returns_next_day
+from langgraph.tools import (
+    get_bloomberg_rss_feeds,
+    get_mock_bloomberg_rss_feeds,
+    process_bloomberg_news,
+    mock_process_bloomberg_news,
+    predict_returns_next_day
+)
 
 config = Config()
 
