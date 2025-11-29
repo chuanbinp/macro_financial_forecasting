@@ -6,8 +6,8 @@ Agentic pipeline for extracting factors and forecasting next-day returns from ma
 
 ## Deployment Information
 
--   **Project Slug:** `macro-fincast`
--   **Deployment URL:** `https://[cloudfront-domain]/macro-fincast`
+-   **Project Slug:** `agentic-macro-fincast`
+-   **Deployment URL:** `https://[cloudfront-domain]/agentic-macro-fincast`
 -   **Main File:** `streamlit.py`
 
 ## Environment Variables Required
