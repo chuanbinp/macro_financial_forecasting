@@ -63,7 +63,6 @@ if run_clicked:
         try:
             
             initial_state = create_initial_state(mode=mode, days_back=days_back)
-            result = asyncio.run(st.session_state.app.ainvoke(initial_state))
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             result = loop.run_until_complete(_run_graph(initial_state))
@@ -124,7 +123,7 @@ if st.session_state.result is not None:
             trace_data.append(
                 {
                     "Node": node_name,
-                    "Data Size": data_size,
+                    "Data Size": str(data_size),
                     "Status": "✅ Complete",
                 }
             )
