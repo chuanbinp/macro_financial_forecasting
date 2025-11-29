@@ -20,7 +20,8 @@ st.set_page_config(
 
 # Title and intro
 st.title("🚀 Agentic Factor Extraction from Financial News Streams")
-st.markdown("**Interactive LangGraph visualization** - Track each stage and final predictions")
+st.markdown("**Financial forecasting using Agentic workflows to extract Macro-economic Sentiment Factors** ")
+st.markdown("Interactive LangGraph visualization - Track each stage and final predictions")
 
 # Sidebar controls
 st.sidebar.header("📋 Pipeline Controls")

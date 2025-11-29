@@ -1,4 +1,4 @@
-name: macro-fincast
+name: agentic-fin-forecast
 channels:
   - defaults
   - conda-forge
@@ -7,12 +7,22 @@ dependencies:
   - python=3.11
   - pip
   - tqdm
+  - pandas
+  - numpy
+  - pyarrow
   - pytorch
-  - torchvision
-  - torchaudio
   - pip:
       - instructor
       - datasets
-      - pydantic
-      - pandas
+      - pydantic>=2.0
       - transformers
+      - python-dotenv
+      - feedparser
+      - yfinance
+      - joblib
+      - langgraph
+      - langchain-core
+      - langchain-openai
+      - streamlit
+      - plotly
+      - nest_asyncio
