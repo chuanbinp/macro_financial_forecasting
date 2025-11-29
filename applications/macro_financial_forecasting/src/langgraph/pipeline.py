@@ -56,7 +56,6 @@ def router_node(state: PipelineState):
 def load_real_news(state: PipelineState):
     raw_data = get_bloomberg_rss_feeds(state["days_back"])
     return {
-        **state,
         "messages": state["messages"] + [AIMessage(content=f"Loaded {len(raw_data)} news articles.")],
         "raw_data": raw_data
     }
@@ -64,7 +63,6 @@ def load_real_news(state: PipelineState):
 def load_mock_news(state: PipelineState):
     raw_data  = get_mock_bloomberg_rss_feeds()
     return {
-        **state,
         "messages": state["messages"] + [AIMessage(content=f"Loaded {len(raw_data)} news articles.")],
         "raw_data": raw_data
     }
@@ -74,7 +72,6 @@ async def process_real(state: PipelineState):
     # Ensure raw_data is a list of dicts, as expected by process_bloomberg_news
     processed_df = await process_bloomberg_news(data=state["raw_data"])
     return {
-        **state,
         "messages": state["messages"] + [AIMessage(content=f"Processed news for {len(processed_df)} industry/date blocks.")],
         "processed_data": processed_df
     }
@@ -82,7 +79,6 @@ async def process_real(state: PipelineState):
 def process_mock(state: PipelineState):
     processed_df = mock_process_bloomberg_news()
     return {
-        **state,
         "messages": state["messages"] + [AIMessage(content=f"Processed news for {len(processed_df)} industry/date blocks.")],
         "processed_data": processed_df
     }
@@ -92,7 +88,6 @@ def run_prediction(state: PipelineState):
     # Ensure processed_data is a DataFrame, as expected by predict_returns_next_day
     predictions = predict_returns_next_day(raw_df=state["processed_data"])
     return {
-        **state,
         "messages": state["messages"] + [AIMessage(content="Generated next-day return predictions.")],
         "predictions": predictions
     }
@@ -121,7 +116,6 @@ def summarize(state: PipelineState):
     response = llm.invoke([HumanMessage(content=prompt)])
 
     return {
-        **state,
         "messages": state["messages"] + [AIMessage(content=response.content)],
         "summary": response.content
     }

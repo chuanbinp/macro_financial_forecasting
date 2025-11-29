@@ -9,7 +9,9 @@ from src.config import Config
 from src.langgraph.pipeline import build_graph, create_initial_state
 
 # Enable asyncio in Streamlit/Colab
-nest_asyncio.apply()
+async def _run_graph(initial_state):
+    return await st.session_state.app.ainvoke(initial_state)
+
 config = Config("config.env")
 print(f"Config: {config}")
 
@@ -62,6 +64,11 @@ if run_clicked:
             
             initial_state = create_initial_state(mode=mode, days_back=days_back)
             result = asyncio.run(st.session_state.app.ainvoke(initial_state))
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(_run_graph(initial_state))
+            loop.close()
+
             st.session_state.result = result
             st.session_state.mode = mode
             st.session_state.days_back = days_back
@@ -93,7 +100,7 @@ if st.session_state.result is not None:
             )
         )
         fig_flow.update_layout(height=350, title="Pipeline Steps", showlegend=False)
-        st.plotly_chart(fig_flow, use_container_width=True)
+        st.plotly_chart(fig_flow, width='stretch')
 
     with col2:
         st.subheader("Execution Info")
@@ -122,7 +129,7 @@ if st.session_state.result is not None:
                 }
             )
     if trace_data:
-        st.dataframe(pd.DataFrame(trace_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(trace_data), width='stretch')
 
     # Tabs with detailed outputs
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
@@ -163,7 +170,7 @@ if st.session_state.result is not None:
 
             st.dataframe(
                 agg[["Industry", "pred_ret_next_pct", "SentimentScore"]].round(2),
-                use_container_width=True,
+                width='stretch',
             )
 
             # Bar chart: ALL industries present in agg
@@ -179,7 +186,7 @@ if st.session_state.result is not None:
             fig.update_coloraxes(cmid=0)  # 0 = center of diverging scale
             fig.update_traces(texttemplate="%{y:.1f}%", textposition="auto")
             fig.update_layout(yaxis_tickformat=".1f")
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         else:
             st.warning("No predictions available")
 
@@ -194,7 +201,7 @@ if st.session_state.result is not None:
                 if col not in ["News", "ImpactfulNews"]
             ]
             st.subheader("Summary table")
-            st.dataframe(df[base_cols], use_container_width=True)
+            st.dataframe(df[base_cols], width='stretch')
 
             # Optional: sentiment histogram
             if "SentimentScore" in df.columns:
@@ -205,7 +212,7 @@ if st.session_state.result is not None:
                     title="Sentiment Score Distribution",
                     nbins=12,
                 )
-                st.plotly_chart(fig_sent, use_container_width=True)
+                st.plotly_chart(fig_sent, width='stretch')
         else:
             st.warning("No processed data available")
 
