@@ -100,11 +100,14 @@ def run_prediction(state: PipelineState):
 
 # Summary
 def summarize(state: PipelineState):
+    processed_data = state["processed_data"]
     predictions_df = state["predictions"]
 
     prompt = f"""You are a quantitative finance analyst. Analyze this financial news pipeline output:
 
-    Dataframe:
+    Processed DataFrame:
+    {processed_data}
+    Predictions DataFrame:
     {predictions_df}
 
     Generate a concise bullet-point report (3-5 bullets max) covering:
