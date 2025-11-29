@@ -13,7 +13,6 @@ from data_model.bloomberg_news_sentiment_explanation import SentimentResult
 from utils.pydantic_parquet_util import ParquetUtil
 from finbert import FinBertSentiment
 from deberta import DebertaIndustryClassifier
-from hf_wrapper import HFInstructorClient
 
 class NewsProcessor:
     def __init__(self, config: Config, concurrency_limit=64, batch_size=10_000):
@@ -22,7 +21,6 @@ class NewsProcessor:
             api_key=config.openai_api_key,
             async_client=True
         )
-        # self.client = HFInstructorClient(model="google/gemma-2-2b")
         self.semaphore = asyncio.Semaphore(concurrency_limit)
         self.batch_size = batch_size
         self.data_dir = config.dataset_dir
