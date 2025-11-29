@@ -11,6 +11,17 @@ from data_model.bloomberg_news_entry import BloombergNewsEntry
 from config import Config
 from processor import NewsProcessor
 
+## Singleton processor instance
+def get_processor(config: Config) -> NewsProcessor:
+    global _processor_instance
+    if _processor_instance is None:
+        _processor_instance = NewsProcessor(config)
+    return _processor_instance
+
+config = Config()
+_processor_instance = get_processor(config)
+
+## Functions to be used in the pipeline
 def get_bloomberg_rss_feeds(days: int = 1) -> List[Dict[str, str]]:
     """Fetch all Bloomberg RSS news for the last N days. One call is enough."""
 
@@ -141,19 +152,12 @@ def get_mock_bloomberg_rss_feeds() -> List[Dict[str, str]]:
 
     return data[:3]
 
-def get_processor(config: Config) -> NewsProcessor:
-    global _processor_instance
-    if _processor_instance is None:
-        _processor_instance = NewsProcessor(config)
-    return _processor_instance
-
 async def process_bloomberg_news(data: List[Dict[str, Any]]) -> pd.DataFrame:
     """
     Run the full NewsProcessor pipeline on raw Bloomberg RSS feed entries.
     Input: List of dicts with Headline, Link, Article, Date
     Output: Processed dataframe converted to list[dict]
     """
-    config = Config()
     processor = get_processor(config)
 
     # Pipeline

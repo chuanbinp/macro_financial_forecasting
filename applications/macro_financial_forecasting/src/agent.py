@@ -1,10 +1,10 @@
-from applications.macro_financial_forecasting.src.langgraph.tools import getProcessor
+from langgraph.tools import get_processor
 from config import Config
-from langgraph import build_graph
+from langgraph.pipeline import build_graph
 from langgraph.pipeline import create_initial_state
 
 config = Config()
-_processor_instance = getProcessor(config)
+_processor_instance = get_processor(config)
 
 app = build_graph()
 MODE = "real"  # or "mock"
