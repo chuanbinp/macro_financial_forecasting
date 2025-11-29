@@ -1,4 +1,4 @@
-name: agentic-fin-forecast
+name: agentic-macro-fincast
 channels:
   - defaults
   - conda-forge
