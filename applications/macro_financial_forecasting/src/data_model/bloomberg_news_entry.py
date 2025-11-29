@@ -1,8 +1,8 @@
 from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
-from config import Config
+from src.config import Config
 
-config = Config("../config.env")
+config = Config("config.env")
 IndustryType = Literal[tuple(config.industries)]
 
 class BloombergNewsEntry(BaseModel):

@@ -1,6 +1,6 @@
 import pandas as pd
 from typing import Type
-from data_model.bloomberg_news_entry import BloombergNewsEntry
+from src.data_model.bloomberg_news_entry import BloombergNewsEntry
 
 class ParquetUtil:
     @staticmethod

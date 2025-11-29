@@ -1,7 +1,7 @@
 from transformers import pipeline
 import torch
 from typing import List
-from config import Config
+from src.config import Config
 from tqdm import tqdm
 
 class DebertaIndustryClassifier:

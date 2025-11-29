@@ -7,12 +7,12 @@ import pandas as pd
 import os
 import re
 
-from config import Config
-from data_model.bloomberg_news_entry import BloombergNewsEntry
-from data_model.bloomberg_news_sentiment_explanation import SentimentResult
-from utils.pydantic_parquet_util import ParquetUtil
-from finbert import FinBertSentiment
-from deberta import DebertaIndustryClassifier
+from src.config import Config
+from src.data_model.bloomberg_news_entry import BloombergNewsEntry
+from src.data_model.bloomberg_news_sentiment_explanation import SentimentResult
+from src.utils.pydantic_parquet_util import ParquetUtil
+from src.finbert import FinBertSentiment
+from src.deberta import DebertaIndustryClassifier
 
 class NewsProcessor:
     def __init__(self, config: Config, concurrency_limit=64, batch_size=10_000):

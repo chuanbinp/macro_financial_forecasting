@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-from config import Config
+from src.config import Config
 from typing import List
 from tqdm import tqdm
 

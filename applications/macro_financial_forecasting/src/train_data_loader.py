@@ -1,8 +1,8 @@
-from datasets import load_dataset, load_from_disk, DatasetDict, Value
-from config import Config
+from datasets import load_dataset, DatasetDict, Value
+from src.config import Config
 import os
-from data_model.bloomberg_news_entry import BloombergNewsEntry
-from utils.pydantic_parquet_util import ParquetUtil
+from src.data_model.bloomberg_news_entry import BloombergNewsEntry
+from src.utils.pydantic_parquet_util import ParquetUtil
 from tqdm import tqdm
 
 class TrainDataLoader:

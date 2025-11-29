@@ -7,9 +7,9 @@ import numpy as np
 import joblib
 import yfinance as yf
 
-from data_model.bloomberg_news_entry import BloombergNewsEntry
-from config import Config
-from processor import NewsProcessor
+from src.data_model.bloomberg_news_entry import BloombergNewsEntry
+from src.config import Config
+from src.processor import NewsProcessor
 
 ## Singleton processor instance
 def get_processor(config: Config) -> NewsProcessor:
@@ -178,9 +178,9 @@ def predict_returns_next_day(raw_df: pd.DataFrame, lookback_days: int = 90) -> s
     df = raw_df.copy()
 
     # Load artifacts once
-    SCALER = joblib.load("../artefacts/scaler_numeric.pkl")
-    NUMERIC_FEATURE_NAMES = joblib.load("../artefacts/numeric_feature_names.pkl")  # ["MKT","SentimentScore_std","ret","ret_vol_20d"]
-    GB_FULL_MODEL = joblib.load("../artefacts/gb_full_model.pkl")
+    SCALER = joblib.load("artefacts/scaler_numeric.pkl")
+    NUMERIC_FEATURE_NAMES = joblib.load("artefacts/numeric_feature_names.pkl")  # ["MKT","SentimentScore_std","ret","ret_vol_20d"]
+    GB_FULL_MODEL = joblib.load("artefacts/gb_full_model.pkl")
 
     # Sentiment standardization constants (set from training)
     SENT_MEAN = 0.0  # replace with training df["SentimentScore"].mean()

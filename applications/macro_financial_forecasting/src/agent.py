@@ -1,4 +1,4 @@
-from langgraph.pipeline import build_graph, create_initial_state
+from src.langgraph.pipeline import build_graph, create_initial_state
 
 app = build_graph()
 MODE = "mock"  # or "real"
