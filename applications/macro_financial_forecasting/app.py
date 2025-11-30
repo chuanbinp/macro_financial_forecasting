@@ -82,23 +82,24 @@ if run_clicked:
             # Always use session_state.app
             # app = st.session_state.app
             initial_state = create_initial_state(mode=mode, days_back=days_back)
-            try:
-                loop = asyncio.get_event_loop()
-            except RuntimeError:
-                # No running loop in this thread
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+            result = asyncio.run(_run_graph(st.session_state.app, initial_state))
+            # try:
+            #     loop = asyncio.get_event_loop()
+            # except RuntimeError:
+            #     # No running loop in this thread
+            #     loop = asyncio.new_event_loop()
+            #     asyncio.set_event_loop(loop)
 
-            # If loop is already running (e.g. some environments), schedule and wait using run_coroutine_threadsafe
-            if loop.is_running():
-                # schedule onto running loop (this returns a concurrent.futures.Future)
-                future = asyncio.run_coroutine_threadsafe(_run_graph(st.session_state.app, initial_state), loop)
-                try:
-                    result = future.result(timeout=90)  # wait up to 1.5 minute
-                except FuturesTimeoutError:
-                    raise
-            else:
-                result = loop.run_until_complete(_run_graph(st.session_state.app, initial_state))
+            # # If loop is already running (e.g. some environments), schedule and wait using run_coroutine_threadsafe
+            # if loop.is_running():
+            #     # schedule onto running loop (this returns a concurrent.futures.Future)
+            #     future = asyncio.run_coroutine_threadsafe(_run_graph(st.session_state.app, initial_state), loop)
+            #     try:
+            #         result = future.result(timeout=90)  # wait up to 1.5 minute
+            #     except FuturesTimeoutError:
+            #         raise
+            # else:
+            #     result = loop.run_until_complete(_run_graph(st.session_state.app, initial_state))
 
             st.session_state.result = result
             st.session_state.mode = mode
