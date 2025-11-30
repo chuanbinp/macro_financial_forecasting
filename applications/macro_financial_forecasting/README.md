@@ -4,6 +4,10 @@
 
 Agentic pipeline for extracting factors and forecasting next-day returns from macroeconomic and financial news (Bloomberg). The project combines streaming RSS ingestion, Pydantic data models, FinBERT/DeBERTa for classification and sentiment, and LangGraph + LLMs for summarization and prediction orchestration.
 
+
+https://github.com/user-attachments/assets/898d0a38-6c6f-48e5-ac0e-ba22cf5c8c83
+
+
 ## Deployment Information
 
 -   **Project Slug:** `agentic-macro-fincast`
@@ -64,3 +68,8 @@ docker run -p 8501:8501 --env-file config.env agentic-macro-fincast:test
 
 - Chuan Bin Phoe
 - Neaton Ang
+
+## Langgraph pipeline
+Can be extended to multi-agent OR new data sources/model predictions
+![WhatsApp Image 2025-11-28 at 10 37 56_4def2b09](https://github.com/user-attachments/assets/e14b7904-1976-457a-86f9-027b71d59d6d)
+
