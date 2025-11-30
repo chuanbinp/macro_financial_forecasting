@@ -40,7 +40,7 @@ mode = st.sidebar.selectbox(
 )
 
 days_back = st.sidebar.slider(
-    "Days back (RSS)",
+    "Days back",
     min_value=1,
     max_value=7,
     value=1,
