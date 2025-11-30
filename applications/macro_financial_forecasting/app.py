@@ -94,7 +94,7 @@ if run_clicked:
                 # schedule onto running loop (this returns a concurrent.futures.Future)
                 future = asyncio.run_coroutine_threadsafe(_run_graph(st.session_state.app, initial_state), loop)
                 try:
-                    result = future.result(timeout=60)  # wait up to 1 minute
+                    result = future.result(timeout=90)  # wait up to 1.5 minute
                 except FuturesTimeoutError:
                     raise
             else:
