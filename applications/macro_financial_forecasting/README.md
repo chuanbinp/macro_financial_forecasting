@@ -70,6 +70,10 @@ docker run -p 8501:8501 --env-file config.env agentic-macro-fincast:test
 - Neaton Ang
 
 ## Langgraph pipeline
-Can be extended to multi-agent OR new data sources/model predictions
+Framework can be extended:
+- Multi-agent
+- New data sources, prediction models
+- Using Agent for path planning (decision on next step)
+
 ![WhatsApp Image 2025-11-28 at 10 37 56_4def2b09](https://github.com/user-attachments/assets/e14b7904-1976-457a-86f9-027b71d59d6d)
 
