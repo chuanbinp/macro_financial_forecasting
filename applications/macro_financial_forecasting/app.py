@@ -3,10 +3,13 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import asyncio
+from concurrent.futures import TimeoutError as FuturesTimeoutError
+import nest_asyncio
 
 from src.config import Config
 from src.langgraph.pipeline import build_graph, create_initial_state
 
+nest_asyncio.apply()
 # Enable asyncio in Streamlit/Colab
 async def _run_graph(app, initial_state):
     return await app.ainvoke(initial_state)
@@ -61,29 +64,41 @@ if "prev_days_back" not in st.session_state:
     st.session_state.prev_days_back = st.session_state.days_back
 
 # # Detect input change -> reset state
+# if mode != st.session_state.prev_mode or days_back != st.session_state.prev_days_back:
+#     st.session_state.prev_mode = mode
+#     st.session_state.prev_days_back = days_back
+#     st.session_state.result = None
+
 if mode != st.session_state.prev_mode or days_back != st.session_state.prev_days_back:
-    st.session_state.prev_mode = mode
-    st.session_state.prev_days_back = days_back
     st.session_state.result = None
 
 # Run pipeline
 if run_clicked:
     with st.spinner("Running pipeline... This may take 30–60 seconds"):
         try:
-            
-            # initial_state = create_initial_state(mode=mode, days_back=days_back)
-            # loop = asyncio.new_event_loop()
-            # asyncio.set_event_loop(loop)
-            # result = loop.run_until_complete(_run_graph(initial_state))
-            # loop.close()
-            app = build_graph()
+            if mode != st.session_state.prev_mode or days_back != st.session_state.prev_days_back:
+                st.session_state.app = build_graph()
+
+            # Always use session_state.app
+            # app = st.session_state.app
             initial_state = create_initial_state(mode=mode, days_back=days_back)
-            loop = asyncio.new_event_loop()
             try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                # No running loop in this thread
+                loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(_run_graph(app, initial_state))
-            finally:
-                loop.close()
+
+            # If loop is already running (e.g. some environments), schedule and wait using run_coroutine_threadsafe
+            if loop.is_running():
+                # schedule onto running loop (this returns a concurrent.futures.Future)
+                future = asyncio.run_coroutine_threadsafe(_run_graph(st.session_state.app, initial_state), loop)
+                try:
+                    result = future.result(timeout=60)  # wait up to 1 minute
+                except FuturesTimeoutError:
+                    raise
+            else:
+                result = loop.run_until_complete(_run_graph(st.session_state.app, initial_state))
 
             st.session_state.result = result
             st.session_state.mode = mode

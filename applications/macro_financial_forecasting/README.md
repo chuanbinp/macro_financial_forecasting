@@ -24,6 +24,21 @@ Agentic pipeline for extracting factors and forecasting next-day returns from ma
 
 ## Local Setup
 
+### Using Conda (Recommended)
+
+```bash
+# Create the Conda environment from environment.yml
+conda env create -f environment.yml
+
+# Activate the environment
+conda activate agentic-macro-fincast
+
+# Run the Streamlit app
+streamlit run streamlit.py
+```
+
+### Using pip
+
 ```bash
 # Install dependencies
 pip install -r requirements.txt
